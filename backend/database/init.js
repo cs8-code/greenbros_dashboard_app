@@ -141,6 +141,4 @@ function seedDatabase(db) {
     db.run('INSERT INTO bills (id, clientId, amount, dueDate, status) VALUES (?, ?, ?, ?, ?)',
       [b.id, b.clientId, b.amount, b.dueDate, b.status]);
   });
-
-  console.log('Database seeded successfully!');
 }

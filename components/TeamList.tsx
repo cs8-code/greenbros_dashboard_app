@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { Employee, DayOfWeek } from '../types';
+import { getInitials, getColorFromName } from '../utils/getInitials';
 
 const AvailabilityViewer: React.FC<{ availability: Record<DayOfWeek, boolean> }> = ({ availability }) => {
     const days: { key: DayOfWeek, label: string }[] = [
@@ -93,15 +94,16 @@ const TeamList: React.FC = () => {
 
                 return (
                     <div key={member.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                        <button 
+                        <button
                             onClick={() => toggleEmployee(member.id)}
                             className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200"
                         >
                             <div className="flex items-center">
-                                <img src={member.avatarUrl} alt={member.name} className="w-16 h-16 rounded-full mr-4" />
+                                <div className={`w-16 h-16 rounded-full mr-4 flex items-center justify-center text-white text-xl font-bold ${getColorFromName(member.name)}`}>
+                                    {getInitials(member.name)}
+                                </div>
                                 <div>
                                     <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">{member.name}</h3>
-                                    <p className="text-brand-green-dark dark:text-brand-green-light font-medium">{member.role}</p>
                                     <AvailabilityViewer availability={member.availability} />
                                 </div>
                             </div>

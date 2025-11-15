@@ -29,8 +29,8 @@ router.get('/:id', (req, res) => {
 // Create new employee
 router.post('/', (req, res) => {
   try {
-    const { id, name, role, avatarUrl, availability } = req.body;
-    const newEmployee = db.create('employees', { id, name, role, avatarUrl, availability });
+    const { id, name, availability } = req.body;
+    const newEmployee = db.create('employees', { id, name, availability });
     res.status(201).json(newEmployee);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -40,8 +40,8 @@ router.post('/', (req, res) => {
 // Update employee
 router.put('/:id', (req, res) => {
   try {
-    const { name, role, avatarUrl, availability } = req.body;
-    const updated = db.update('employees', req.params.id, { name, role, avatarUrl, availability });
+    const { name, availability } = req.body;
+    const updated = db.update('employees', req.params.id, { name, availability });
 
     if (!updated) {
       return res.status(404).json({ error: 'Employee not found' });

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { Task, TaskStatus, Employee } from '../types';
 import AddTaskModal from './AddTaskModal';
+import { getInitials, getColorFromName } from '../utils/getInitials';
 
 const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
     const { getClientById, getEmployeeById } = useData();
@@ -24,7 +25,9 @@ const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
             <div className="flex items-center justify-between mt-4">
                 <div className="flex -space-x-2">
                     {assignedTeam.map(member => (
-                        <img key={member.id} src={member.avatarUrl} alt={member.name} className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-700"/>
+                        <div key={member.id} title={member.name} className={`w-8 h-8 rounded-full border-2 border-white dark:border-gray-700 flex items-center justify-center text-white text-xs font-bold ${getColorFromName(member.name)}`}>
+                            {getInitials(member.name)}
+                        </div>
                     ))}
                 </div>
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{new Date(task.dueDate).toLocaleDateString('de-DE')}</span>

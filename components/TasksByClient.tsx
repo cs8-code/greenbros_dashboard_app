@@ -2,6 +2,7 @@
 import React from 'react';
 import { useData } from '../context/DataContext';
 import { Task, TaskStatus, Employee } from '../types';
+import { getInitials, getColorFromName } from '../utils/getInitials';
 
 // Helper to get status chip styles
 const getStatusChip = (status: TaskStatus) => {
@@ -34,7 +35,9 @@ const TaskRow: React.FC<{ task: Task }> = ({ task }) => {
             <td className="p-4">
                 <div className="flex -space-x-2 justify-center">
                     {assignedTeam.length > 0 ? assignedTeam.map(member => (
-                        <img key={member.id} src={member.avatarUrl} alt={member.name} title={member.name} className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-700"/>
+                        <div key={member.id} title={member.name} className={`w-8 h-8 rounded-full border-2 border-white dark:border-gray-700 flex items-center justify-center text-white text-xs font-bold ${getColorFromName(member.name)}`}>
+                            {getInitials(member.name)}
+                        </div>
                     )) : <span className="text-xs text-gray-400">Niemand</span>}
                 </div>
             </td>

@@ -43,16 +43,15 @@
       "buildResources": "assets"
     },
     "win": {
-      "target": "nsis",
+      "target": ["portable", "nsis"],
       "icon": "assets/icon.ico"
     },
-    "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns"
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     },
-    "linux": {
-      "target": "AppImage",
-      "icon": "assets/icon.png"
+    "portable": {
+      "artifactName": "GreenBros-Dashboard-Portable.exe"
     }
   }
 }

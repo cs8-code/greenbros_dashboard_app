@@ -37,29 +37,21 @@ function initDatabase() {
         {
           id: 'e1',
           name: 'David Green',
-          role: 'Chefgärtner',
-          avatarUrl: 'https://i.pravatar.cc/150?u=e1',
           availability: { monday: true, tuesday: true, wednesday: true, thursday: true, friday: false, saturday: false, sunday: false }
         },
         {
           id: 'e2',
           name: 'Eve Gardener',
-          role: 'Gartenbau-Expertin',
-          avatarUrl: 'https://i.pravatar.cc/150?u=e2',
           availability: { monday: true, tuesday: true, wednesday: false, thursday: true, friday: true, saturday: false, sunday: false }
         },
         {
           id: 'e3',
           name: 'Frank Spade',
-          role: 'Landschaftsgärtner',
-          avatarUrl: 'https://i.pravatar.cc/150?u=e3',
           availability: { monday: false, tuesday: false, wednesday: true, thursday: true, friday: true, saturday: true, sunday: false }
         },
         {
           id: 'e4',
           name: 'Grace Roots',
-          role: 'Nachwuchs-Gärtnerin',
-          avatarUrl: 'https://i.pravatar.cc/150?u=e4',
           availability: { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: false, sunday: false }
         },
       ],

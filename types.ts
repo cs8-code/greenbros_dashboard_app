@@ -33,7 +33,5 @@ export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'frida
 export interface Employee {
   id: string;
   name: string;
-  role: string;
-  avatarUrl: string;
   availability: Record<DayOfWeek, boolean>;
 }

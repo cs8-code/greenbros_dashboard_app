@@ -1,6 +1,7 @@
 import React from 'react';
 import { useData } from '../context/DataContext';
 import { Client, Employee, Task, TaskStatus, DayOfWeek } from '../types';
+import { getInitials, getColorFromName } from '../utils/getInitials';
 
 interface StatCardProps {
     title: string;
@@ -45,10 +46,11 @@ const TaskRow: React.FC<{task: Task, client?: Client}> = ({task, client}) => (
 
 const TeamMemberRow: React.FC<{member: Employee}> = ({member}) => (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex items-center hover:shadow-md dark:hover:bg-gray-700 transition-shadow">
-        <img src={member.avatarUrl} alt={member.name} className="w-12 h-12 rounded-full mr-4"/>
+        <div className={`w-12 h-12 rounded-full mr-4 flex items-center justify-center text-white font-bold ${getColorFromName(member.name)}`}>
+            {getInitials(member.name)}
+        </div>
         <div>
             <p className="font-semibold text-gray-800 dark:text-gray-100">{member.name}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{member.role}</p>
         </div>
     </div>
 );
