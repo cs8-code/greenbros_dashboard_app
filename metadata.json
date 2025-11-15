@@ -1,0 +1,5 @@
+{
+  "name": "Garten-Service Dashboard",
+  "description": "Ein umfassendes Dashboard für einen Garten-Service-Betrieb zur Verwaltung von Aufgaben, Kunden, Rechnungen und Teammitgliedern. Bietet ein Drag-and-Drop-Aufgabenbrett und eine tägliche Übersicht.",
+  "requestFramePermissions": []
+}
