@@ -14,8 +14,9 @@ export interface Client {
   id: string;
   name: string;
   address: string;
-  phone: string;
-  email: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
 }
 
 export type BillStatus = 'paid' | 'due' | 'overdue';

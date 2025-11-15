@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { Employee, DayOfWeek } from '../types';
 import { getInitials, getColorFromName } from '../utils/getInitials';
+import EmployeeFormModal from './EmployeeFormModal';
 
 const AvailabilityViewer: React.FC<{ availability: Record<DayOfWeek, boolean> }> = ({ availability }) => {
     const days: { key: DayOfWeek, label: string }[] = [
@@ -40,11 +41,36 @@ const AvailabilityViewer: React.FC<{ availability: Record<DayOfWeek, boolean> }>
 
 
 const TeamList: React.FC = () => {
-    const { employees, tasks } = useData();
+    const { employees, tasks, addEmployee, updateEmployee, deleteEmployee } = useData();
     const [expandedEmployeeId, setExpandedEmployeeId] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>(undefined);
 
     const toggleEmployee = (employeeId: string) => {
         setExpandedEmployeeId(prevId => (prevId === employeeId ? null : employeeId));
+    };
+
+    const handleAddEmployee = () => {
+        setEditingEmployee(undefined);
+        setIsModalOpen(true);
+    };
+
+    const handleEditEmployee = (employee: Employee, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingEmployee(employee);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteEmployee = (employeeId: string) => {
+        deleteEmployee(employeeId);
+    };
+
+    const handleSaveEmployee = (employeeData: Omit<Employee, 'id'>) => {
+        if (editingEmployee) {
+            updateEmployee(editingEmployee.id, employeeData);
+        } else {
+            addEmployee(employeeData);
+        }
     };
 
     const workStatsByEmployee = useMemo(() => {
@@ -86,7 +112,16 @@ const TeamList: React.FC = () => {
     return (
         <div className="space-y-4">
              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">Unser Team</h2>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Unser Team</h2>
+                    <button
+                        onClick={handleAddEmployee}
+                        className="px-4 py-2 bg-brand-green text-white rounded-lg hover:bg-brand-green-dark flex items-center space-x-2"
+                    >
+                        <span>+</span>
+                        <span>Neuer Mitarbeiter</span>
+                    </button>
+                </div>
             </div>
             {employees.map(member => {
                 const workStats = workStatsByEmployee[member.id] || [];
@@ -107,7 +142,7 @@ const TeamList: React.FC = () => {
                                     <AvailabilityViewer availability={member.availability} />
                                 </div>
                             </div>
-                            <div className="flex items-center">
+                            <div className="flex items-center space-x-2">
                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 text-gray-500 dark:text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
@@ -116,7 +151,18 @@ const TeamList: React.FC = () => {
                         
                         {isOpen && (
                             <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                                <h4 className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Monatliche Arbeitsstatistiken</h4>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-semibold text-gray-700 dark:text-gray-300">Monatliche Arbeitsstatistiken</h4>
+                                    <button
+                                        onClick={(e) => handleEditEmployee(member, e)}
+                                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        <span>Bearbeiten</span>
+                                    </button>
+                                </div>
                                 {workStats.length > 0 ? (
                                     <table className="w-full max-w-sm text-left text-sm">
                                         <thead>
@@ -142,6 +188,14 @@ const TeamList: React.FC = () => {
                     </div>
                 );
             })}
+
+            <EmployeeFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveEmployee}
+                onDelete={handleDeleteEmployee}
+                employee={editingEmployee}
+            />
         </div>
     );
 };

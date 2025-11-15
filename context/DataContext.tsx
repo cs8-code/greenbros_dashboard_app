@@ -13,6 +13,13 @@ interface DataContextType {
   getEmployeeById: (employeeId: string) => Employee | undefined;
   addTask: (task: Omit<Task, 'id' | 'status'>) => void;
   addClient: (client: Omit<Client, 'id'>) => void;
+  addEmployee: (employee: Omit<Employee, 'id'>) => void;
+  updateTask: (taskId: string, task: Partial<Task>) => void;
+  updateClient: (clientId: string, client: Partial<Client>) => void;
+  updateEmployee: (employeeId: string, employee: Partial<Employee>) => void;
+  deleteTask: (taskId: string) => void;
+  deleteClient: (clientId: string) => void;
+  deleteEmployee: (employeeId: string) => void;
   loading: boolean;
 }
 
@@ -124,8 +131,156 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const getClientById = (clientId: string) => clients.find(c => c.id === clientId);
   const getEmployeeById = (employeeId: string) => employees.find(e => e.id === employeeId);
 
+  // Add Employee
+  const addEmployee = async (employeeData: Omit<Employee, 'id'>) => {
+    const newEmployee: Employee = {
+      ...employeeData,
+      id: `e${Date.now()}`
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/employees`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEmployee),
+      });
+
+      if (response.ok) {
+        setEmployees(prevEmployees => [...prevEmployees, newEmployee]);
+      }
+    } catch (error) {
+      console.error('Error adding employee:', error);
+    }
+  };
+
+  // Update Task
+  const updateTask = async (taskId: string, taskData: Partial<Task>) => {
+    try {
+      const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskData),
+      });
+
+      if (response.ok) {
+        setTasks(prevTasks =>
+          prevTasks.map(task =>
+            task.id === taskId ? { ...task, ...taskData } : task
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  // Update Client
+  const updateClient = async (clientId: string, clientData: Partial<Client>) => {
+    try {
+      const response = await fetch(`${API_URL}/clients/${clientId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(clientData),
+      });
+
+      if (response.ok) {
+        setClients(prevClients =>
+          prevClients.map(client =>
+            client.id === clientId ? { ...client, ...clientData } : client
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating client:', error);
+    }
+  };
+
+  // Update Employee
+  const updateEmployee = async (employeeId: string, employeeData: Partial<Employee>) => {
+    try {
+      const response = await fetch(`${API_URL}/employees/${employeeId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employeeData),
+      });
+
+      if (response.ok) {
+        setEmployees(prevEmployees =>
+          prevEmployees.map(employee =>
+            employee.id === employeeId ? { ...employee, ...employeeData } : employee
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating employee:', error);
+    }
+  };
+
+  // Delete Task
+  const deleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  // Delete Client
+  const deleteClient = async (clientId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/clients/${clientId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setClients(prevClients => prevClients.filter(client => client.id !== clientId));
+      }
+    } catch (error) {
+      console.error('Error deleting client:', error);
+    }
+  };
+
+  // Delete Employee
+  const deleteEmployee = async (employeeId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/employees/${employeeId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setEmployees(prevEmployees => prevEmployees.filter(employee => employee.id !== employeeId));
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+    }
+  };
+
   return (
-    <DataContext.Provider value={{ tasks, clients, bills, employees, updateTaskStatus, getClientById, getEmployeeById, addTask, addClient, loading }}>
+    <DataContext.Provider value={{
+      tasks,
+      clients,
+      bills,
+      employees,
+      updateTaskStatus,
+      getClientById,
+      getEmployeeById,
+      addTask,
+      addClient,
+      addEmployee,
+      updateTask,
+      updateClient,
+      updateEmployee,
+      deleteTask,
+      deleteClient,
+      deleteEmployee,
+      loading
+    }}>
       {children}
     </DataContext.Provider>
   );

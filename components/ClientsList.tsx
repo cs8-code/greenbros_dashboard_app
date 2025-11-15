@@ -1,62 +1,48 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Task, TaskStatus, Employee } from '../types';
-import AddClientModal from './AddClientModal';
-import { getInitials, getColorFromName } from '../utils/getInitials';
-
-const getStatusChip = (status: TaskStatus) => {
-    switch (status) {
-        case 'open':
-            return <div className="px-3 py-1 text-xs font-medium rounded-full capitalize bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">Offen</div>;
-        case 'in-progress':
-            return <div className="px-3 py-1 text-xs font-medium rounded-full capitalize bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">In Arbeit</div>;
-        case 'completed':
-            return <div className="px-3 py-1 text-xs font-medium rounded-full capitalize bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Abgeschlossen</div>;
-    }
-};
-
-const ClientTaskRow: React.FC<{ task: Task }> = ({ task }) => {
-    const { getEmployeeById } = useData();
-    const assignedTeam = task.assignedTo.map(id => getEmployeeById(id)).filter(Boolean) as Employee[];
-
-    return (
-        <tr className="border-b border-gray-200 dark:border-gray-700">
-            <td className="p-3">
-                <p className="font-medium text-gray-800 dark:text-gray-200">{task.title}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{task.description}</p>
-            </td>
-            <td className="p-3 text-center">{getStatusChip(task.status)}</td>
-            <td className="p-3 text-center text-gray-700 dark:text-gray-300">{new Date(task.dueDate).toLocaleDateString('de-DE')}</td>
-            <td className="p-3">
-                <div className="flex -space-x-2 justify-center">
-                    {assignedTeam.length > 0 ? assignedTeam.map(member => (
-                        <div key={member.id} title={member.name} className={`w-8 h-8 rounded-full border-2 border-white dark:border-gray-600 flex items-center justify-center text-white text-xs font-bold ${getColorFromName(member.name)}`}>
-                            {getInitials(member.name)}
-                        </div>
-                    )) : <span className="text-xs text-gray-400">Niemand</span>}
-                </div>
-            </td>
-        </tr>
-    );
-};
+import { Client } from '../types';
+import ClientFormModal from './ClientFormModal';
 
 const ClientsList: React.FC = () => {
-    const { clients, tasks } = useData();
+    const { clients, addClient, updateClient, deleteClient } = useData();
     const [expandedClientId, setExpandedClientId] = useState<string | null>(null);
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingClient, setEditingClient] = useState<Client | undefined>(undefined);
 
     const toggleClient = (clientId: string) => {
         setExpandedClientId(prevId => (prevId === clientId ? null : clientId));
     };
 
+    const handleAddClient = () => {
+        setEditingClient(undefined);
+        setIsModalOpen(true);
+    };
+
+    const handleEditClient = (client: Client, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setEditingClient(client);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteClient = (clientId: string) => {
+        deleteClient(clientId);
+    };
+
+    const handleSaveClient = (clientData: Omit<Client, 'id'>) => {
+        if (editingClient) {
+            updateClient(editingClient.id, clientData);
+        } else {
+            addClient(clientData);
+        }
+    };
+
     return (
         <>
-            <AddClientModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Unsere Kunden</h2>
                     <button
-                        onClick={() => setIsAddModalOpen(true)}
+                        onClick={handleAddClient}
                         className="bg-brand-green hover:bg-brand-green-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,7 +53,6 @@ const ClientsList: React.FC = () => {
                 </div>
                 <div className="space-y-2">
                     {clients.map(client => {
-                        const clientTasks = tasks.filter(task => task.clientId === client.id);
                         const isOpen = expandedClientId === client.id;
                         
                         return (
@@ -86,37 +71,61 @@ const ClientsList: React.FC = () => {
                                             <span className="text-sm">{client.address}</span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center space-x-4">
-                                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-600">{clientTasks.length} Aufgabe(n)</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 text-gray-500 dark:text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </div>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </button>
                                 {isOpen && (
                                     <div className="p-4 bg-white dark:bg-gray-800">
-                                        {clientTasks.length > 0 ? (
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-left text-sm">
-                                                    <thead className="border-b-2 border-gray-200 dark:border-gray-600">
-                                                        <tr>
-                                                            <th className="p-2 font-semibold text-gray-600 dark:text-gray-400 w-2/5">Aufgabe</th>
-                                                            <th className="p-2 font-semibold text-gray-600 dark:text-gray-400 text-center">Status</th>
-                                                            <th className="p-2 font-semibold text-gray-600 dark:text-gray-400 text-center">Fälligkeit</th>
-                                                            <th className="p-2 font-semibold text-gray-600 dark:text-gray-400 text-center">Zugewiesen</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {clientTasks
-                                                            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-                                                            .map(task => <ClientTaskRow key={task.id} task={task} />
-                                                        )}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        ) : (
-                                            <p className="text-gray-500 dark:text-gray-400 px-2 py-4">Für diesen Kunden sind keine Aufgaben geplant.</p>
-                                        )}
+                                        <div className="flex justify-end mb-4">
+                                            <button
+                                                onClick={(e) => handleEditClient(client, e)}
+                                                className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center space-x-2"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                                <span>Bearbeiten</span>
+                                            </button>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {client.contactPerson && (
+                                                <div className="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                    </svg>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Ansprechpartner</p>
+                                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{client.contactPerson}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {client.phone && (
+                                                <div className="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                    </svg>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">Telefon</p>
+                                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{client.phone}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {client.email && (
+                                                <div className="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                    </svg>
+                                                    <div>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">E-Mail</p>
+                                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{client.email}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {!client.contactPerson && !client.phone && !client.email && (
+                                                <p className="text-gray-500 dark:text-gray-400 text-sm">Keine weiteren Informationen verfügbar.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -124,6 +133,14 @@ const ClientsList: React.FC = () => {
                     })}
                 </div>
             </div>
+
+            <ClientFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveClient}
+                onDelete={handleDeleteClient}
+                client={editingClient}
+            />
         </>
     );
 };

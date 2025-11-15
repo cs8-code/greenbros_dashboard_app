@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { Task, TaskStatus, Employee } from '../types';
-import AddTaskModal from './AddTaskModal';
+import TaskFormModal from './TaskFormModal';
 import { getInitials, getColorFromName } from '../utils/getInitials';
 
-const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
+const TaskCard: React.FC<{ task: Task; onEdit: (task: Task) => void; onDelete: (taskId: string) => void }> = ({ task, onEdit }) => {
     const { getClientById, getEmployeeById } = useData();
     const client = getClientById(task.clientId);
     const assignedTeam = task.assignedTo.map(id => getEmployeeById(id)).filter(Boolean) as Employee[];
@@ -13,11 +13,20 @@ const TaskCard: React.FC<{ task: Task }> = ({ task }) => {
         e.dataTransfer.setData("taskId", task.id);
     };
 
+    const handleClick = (e: React.MouseEvent) => {
+        // Only open edit if not dragging
+        if (e.detail === 2) { // Double click
+            onEdit(task);
+        }
+    };
+
     return (
-        <div 
-            draggable 
+        <div
+            draggable
             onDragStart={handleDragStart}
-            className="bg-white dark:bg-gray-800 p-4 mb-4 rounded-lg shadow-sm border-l-4 border-brand-green dark:border-brand-green-dark cursor-grab active:cursor-grabbing"
+            onDoubleClick={handleClick}
+            className="bg-white dark:bg-gray-800 p-4 mb-4 rounded-lg shadow-sm border-l-4 border-brand-green dark:border-brand-green-dark cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+            title="Doppelklick zum Bearbeiten"
         >
             <h4 className="font-bold text-gray-800 dark:text-gray-100">{task.title}</h4>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{client?.name}</p>
@@ -42,9 +51,11 @@ interface ColumnProps {
   status: TaskStatus;
   tasks: Task[];
   onDrop: (status: TaskStatus) => void;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
-const Column: React.FC<ColumnProps> = ({ title, status, tasks, onDrop }) => {
+const Column: React.FC<ColumnProps> = ({ title, status, tasks, onDrop, onEditTask, onDeleteTask }) => {
     const [isOver, setIsOver] = useState(false);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -81,7 +92,7 @@ const Column: React.FC<ColumnProps> = ({ title, status, tasks, onDrop }) => {
             </h3>
             <div className="h-[calc(100vh-32rem)] overflow-y-auto pr-2">
                 {tasks.map(task => (
-                    <TaskCard key={task.id} task={task} />
+                    <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} />
                 ))}
             </div>
         </div>
@@ -89,9 +100,10 @@ const Column: React.FC<ColumnProps> = ({ title, status, tasks, onDrop }) => {
 };
 
 const TasksBoard: React.FC = () => {
-    const { tasks, clients, employees, updateTaskStatus } = useData();
+    const { tasks, clients, employees, updateTaskStatus, addTask, updateTask, deleteTask } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+    const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
+
     const [filterClient, setFilterClient] = useState('all');
     const [filterEmployee, setFilterEmployee] = useState('all');
     const [filterDueDate, setFilterDueDate] = useState('all');
@@ -104,7 +116,29 @@ const TasksBoard: React.FC = () => {
             updateTaskStatus(taskId, targetStatus);
         }
     };
-    
+
+    const handleAddTask = () => {
+        setEditingTask(undefined);
+        setIsModalOpen(true);
+    };
+
+    const handleEditTask = (task: Task) => {
+        setEditingTask(task);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteTask = (taskId: string) => {
+        deleteTask(taskId);
+    };
+
+    const handleSaveTask = (taskData: Omit<Task, 'id' | 'status'>) => {
+        if (editingTask) {
+            updateTask(editingTask.id, taskData);
+        } else {
+            addTask(taskData);
+        }
+    };
+
     const filteredAndSortedTasks = useMemo(() => {
         let processedTasks = [...tasks];
 
@@ -167,7 +201,6 @@ const TasksBoard: React.FC = () => {
 
     return (
         <>
-            <AddTaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
                  <div className="flex flex-wrap items-center gap-4 flex-grow">
                     <select value={filterClient} onChange={e => setFilterClient(e.target.value)} className="p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
@@ -191,7 +224,7 @@ const TasksBoard: React.FC = () => {
                     </select>
                  </div>
                  <button
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={handleAddTask}
                     className="bg-brand-green hover:bg-brand-green-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center flex-shrink-0"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -218,7 +251,7 @@ const TasksBoard: React.FC = () => {
 
             <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 h-full">
                 {columns.map(col => (
-                    <Column 
+                    <Column
                         key={col.status}
                         title={col.title}
                         status={col.status}
@@ -227,9 +260,19 @@ const TasksBoard: React.FC = () => {
                             const event = window.event as unknown as React.DragEvent<HTMLDivElement>;
                             handleDrop(newStatus, event);
                         }}
+                        onEditTask={handleEditTask}
+                        onDeleteTask={handleDeleteTask}
                     />
                 ))}
             </div>
+
+            <TaskFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveTask}
+                onDelete={handleDeleteTask}
+                task={editingTask}
+            />
         </>
     );
 };
