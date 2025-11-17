@@ -23,26 +23,72 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, darkColo
     </div>
 );
 
-const getStatusChip = (status: TaskStatus) => {
+const getStatusChip = (status: TaskStatus, onClick?: (e: React.MouseEvent) => void) => {
+    const baseClasses = "px-3 py-1 text-sm rounded-full capitalize transition-all";
+    const clickableClasses = onClick ? "cursor-pointer hover:scale-105 hover:shadow-md" : "";
+
     switch (status) {
         case 'open':
-            return <div className="px-3 py-1 text-sm rounded-full capitalize bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">Offen</div>;
+            return (
+                <div
+                    className={`${baseClasses} ${clickableClasses} bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300`}
+                    onClick={onClick}
+                    title={onClick ? "Status ändern" : ""}
+                >
+                    Offen
+                </div>
+            );
         case 'in-progress':
-            return <div className="px-3 py-1 text-sm rounded-full capitalize bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">In Arbeit</div>;
+            return (
+                <div
+                    className={`${baseClasses} ${clickableClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300`}
+                    onClick={onClick}
+                    title={onClick ? "Status ändern" : ""}
+                >
+                    In Arbeit
+                </div>
+            );
         case 'completed':
-            return <div className="px-3 py-1 text-sm rounded-full capitalize bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">Abgeschlossen</div>;
+            return (
+                <div
+                    className={`${baseClasses} ${clickableClasses} bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300`}
+                    onClick={onClick}
+                    title={onClick ? "Status ändern" : ""}
+                >
+                    Abgeschlossen
+                </div>
+            );
     }
 };
 
-const TaskRow: React.FC<{task: Task, client?: Client}> = ({task, client}) => (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex items-center justify-between hover:shadow-md dark:hover:bg-gray-700 transition-shadow">
-        <div>
-            <p className="font-semibold text-gray-800 dark:text-gray-100">{task.title}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{client?.name || 'Unbekannter Kunde'}</p>
+const TaskRow: React.FC<{task: Task, client?: Client}> = ({task, client}) => {
+    const { updateTaskStatus } = useData();
+
+    const handleStatusClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Default to 'open' if status is undefined
+        const currentStatus = task.status || 'open';
+        const nextStatus: Record<TaskStatus, TaskStatus> = {
+            'open': 'in-progress',
+            'in-progress': 'completed',
+            'completed': 'open'
+        };
+        updateTaskStatus(task.id, nextStatus[currentStatus]);
+    };
+
+    // Default to 'open' if status is undefined
+    const currentStatus = task.status || 'open';
+
+    return (
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex items-center justify-between hover:shadow-md dark:hover:bg-gray-700 transition-shadow">
+            <div>
+                <p className="font-semibold text-gray-800 dark:text-gray-100">{task.title}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{client?.name || 'Unbekannter Kunde'}</p>
+            </div>
+            {getStatusChip(currentStatus, handleStatusClick)}
         </div>
-        {getStatusChip(task.status)}
-    </div>
-);
+    );
+};
 
 const TeamMemberRow: React.FC<{member: Employee}> = ({member}) => (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm flex items-center hover:shadow-md dark:hover:bg-gray-700 transition-shadow">
@@ -56,7 +102,7 @@ const TeamMemberRow: React.FC<{member: Employee}> = ({member}) => (
 );
 
 const WeeklyCalendar: React.FC = () => {
-    const { tasks } = useData();
+    const { tasks, updateTaskStatus } = useData();
 
     const today = new Date();
     const todayDateString = today.toISOString().split('T')[0];
@@ -122,15 +168,30 @@ const WeeklyCalendar: React.FC = () => {
                                 </p>
                             </div>
                             <div className="space-y-2 h-48 overflow-y-auto pr-1">
-                                {tasksForDay.map(task => (
-                                    <div 
-                                        key={task.id} 
-                                        className={`p-2 rounded-md bg-white dark:bg-gray-800 shadow-sm border-l-4 ${getStatusBorder(task.status)}`}
-                                        title={task.title}
-                                    >
-                                        <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{task.title}</p>
-                                    </div>
-                                ))}
+                                {tasksForDay.map(task => {
+                                    // Default to 'open' if status is undefined
+                                    const currentStatus = task.status || 'open';
+
+                                    const handleTaskClick = () => {
+                                        const nextStatus: Record<TaskStatus, TaskStatus> = {
+                                            'open': 'in-progress',
+                                            'in-progress': 'completed',
+                                            'completed': 'open'
+                                        };
+                                        updateTaskStatus(task.id, nextStatus[currentStatus]);
+                                    };
+
+                                    return (
+                                        <div
+                                            key={task.id}
+                                            className={`p-2 rounded-md bg-white dark:bg-gray-800 shadow-sm border-l-4 ${getStatusBorder(currentStatus)} cursor-pointer hover:scale-105 transition-transform`}
+                                            title={`${task.title} - Klicken zum Status ändern`}
+                                            onClick={handleTaskClick}
+                                        >
+                                            <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{task.title}</p>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )

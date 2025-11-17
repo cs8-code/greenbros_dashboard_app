@@ -58,7 +58,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
         <form onSubmit={handleSubmit}>
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Neue Aufgabe erstellen</h3>
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Neuen Auftrag erstellen</h3>
           </div>
           <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
             {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">{error}</div>}

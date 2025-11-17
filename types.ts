@@ -36,3 +36,14 @@ export interface Employee {
   name: string;
   availability: Record<DayOfWeek, boolean>;
 }
+
+export type DocumentType = 'Rechnung' | 'Vertrag' | 'Sonstiges';
+
+export interface Document {
+  id: string;
+  name: string;
+  type: DocumentType;
+  uploadDate: string; // YYYY-MM-DD
+  filePath: string;
+  fileSize: number; // in bytes
+}

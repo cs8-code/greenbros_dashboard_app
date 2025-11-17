@@ -5,13 +5,14 @@ import Dashboard from './components/Dashboard';
 import TasksBoard from './components/TasksBoard';
 import ClientsList from './components/ClientsList';
 import BillsList from './components/BillsList';
+import Documents from './components/Documents';
 import TeamList from './components/TeamList';
 import CalendarView from './components/CalendarView';
 import Header from './components/Header';
 import { DataProvider } from './context/DataContext';
 import { ThemeProvider } from './context/ThemeContext';
 
-export type View = 'dashboard' | 'tasks' | 'clients' | 'bills' | 'team' | 'calendar';
+export type View = 'dashboard' | 'tasks' | 'clients' | 'bills' | 'documents' | 'team' | 'calendar';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -26,6 +27,8 @@ const App: React.FC = () => {
         return <ClientsList />;
       case 'bills':
         return <BillsList />;
+      case 'documents':
+        return <Documents />;
       case 'team':
         return <TeamList />;
       case 'calendar':

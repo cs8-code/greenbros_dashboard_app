@@ -26,6 +26,9 @@ dist-ssr
 # Database - contains private data
 backend/data/database.json
 
+# Uploaded documents - contains private data
+backend/uploads/
+
 # Electron build output
 out/
 release/

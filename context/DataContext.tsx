@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Client, Bill, Employee, TaskStatus } from '../types';
+import { Task, Client, Bill, Employee, TaskStatus, Document, DocumentType } from '../types';
 
 const API_URL = 'http://localhost:3001/api';
 
@@ -8,6 +8,7 @@ interface DataContextType {
   clients: Client[];
   bills: Bill[];
   employees: Employee[];
+  documents: Document[];
   updateTaskStatus: (taskId: string, newStatus: TaskStatus) => void;
   getClientById: (clientId: string) => Client | undefined;
   getEmployeeById: (employeeId: string) => Employee | undefined;
@@ -20,6 +21,9 @@ interface DataContextType {
   deleteTask: (taskId: string) => void;
   deleteClient: (clientId: string) => void;
   deleteEmployee: (employeeId: string) => void;
+  uploadDocument: (file: File, type: DocumentType) => Promise<void>;
+  deleteDocument: (documentId: string) => void;
+  downloadDocument: (documentId: string, fileName: string) => void;
   loading: boolean;
 }
 
@@ -30,6 +34,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [clients, setClients] = useState<Client[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch all data on mount
@@ -40,24 +45,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [tasksRes, clientsRes, billsRes, employeesRes] = await Promise.all([
+      const [tasksRes, clientsRes, billsRes, employeesRes, documentsRes] = await Promise.all([
         fetch(`${API_URL}/tasks`),
         fetch(`${API_URL}/clients`),
         fetch(`${API_URL}/bills`),
         fetch(`${API_URL}/employees`),
+        fetch(`${API_URL}/documents`),
       ]);
 
-      const [tasksData, clientsData, billsData, employeesData] = await Promise.all([
+      const [tasksData, clientsData, billsData, employeesData, documentsData] = await Promise.all([
         tasksRes.json(),
         clientsRes.json(),
         billsRes.json(),
         employeesRes.json(),
+        documentsRes.json(),
       ]);
 
       setTasks(tasksData);
       setClients(clientsData);
       setBills(billsData);
       setEmployees(employeesData);
+      setDocuments(documentsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -261,12 +269,59 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Upload Document
+  const uploadDocument = async (file: File, type: DocumentType) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+
+      const response = await fetch(`${API_URL}/documents`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const newDocument = await response.json();
+        setDocuments(prevDocuments => [...prevDocuments, newDocument]);
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      throw error;
+    }
+  };
+
+  // Delete Document
+  const deleteDocument = async (documentId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/documents/${documentId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== documentId));
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  // Download Document
+  const downloadDocument = (documentId: string, fileName: string) => {
+    const url = `${API_URL}/documents/${documentId}/download`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+  };
+
   return (
     <DataContext.Provider value={{
       tasks,
       clients,
       bills,
       employees,
+      documents,
       updateTaskStatus,
       getClientById,
       getEmployeeById,
@@ -279,6 +334,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       deleteTask,
       deleteClient,
       deleteEmployee,
+      uploadDocument,
+      deleteDocument,
+      downloadDocument,
       loading
     }}>
       {children}

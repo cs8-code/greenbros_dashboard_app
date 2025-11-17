@@ -8,9 +8,9 @@ interface HeaderProps {
 
 const viewTitles: Record<View, string> = {
     dashboard: 'Dashboard',
-    tasks: 'Aufgabenplaner',
+    tasks: 'Auftragsplaner',
     clients: 'Kunden',
-    bills: 'Rechnungen',
+    bills: 'Dokumente',
     team: 'Team',
     calendar: 'Kalender',
 };
