@@ -103,21 +103,25 @@ Deploy to the cloud for browser-based access from anywhere.
    - **Root Directory**: `backend`
    - **Environment**: `Node`
    - **Build Command**: `npm install`
-   - **Start Command**: `node server.js`
+   - **Start Command**: `npm start`
    - **Plan**: Free
+
+**Important:** Make sure the Root Directory is set to `backend` so Render uses the backend's package.json.
 
 ### Step 4: Add Environment Variables (Optional)
 
 If you need any environment variables for the backend, add them in the "Environment" section.
 
-### Step 5: Initialize Database
+### Step 5: Verify Database Initialization
 
-1. After deployment, go to the Render dashboard
-2. Click on your service → "Shell"
-3. Run:
-   ```bash
-   cp data/database.sample.json data/database.json
-   ```
+The database is **automatically initialized** when the backend starts. No manual steps required!
+
+What happens automatically:
+- Creates the `data` directory if it doesn't exist
+- Initializes `database.json` with sample data on first run
+- You can verify this in the Render logs (look for "Database initialized with sample data")
+
+**Note:** Shell access requires a paid Render plan. The free tier works perfectly without it because the backend handles initialization automatically.
 
 ### Step 6: Copy Your Backend URL
 
