@@ -1,201 +1,294 @@
-# GreenBros Dashboard - Deployment Guide
+# Deployment Guide
 
-This guide will help you set up and deploy the GreenBros Dashboard as a desktop application with a local backend.
+This guide covers **two deployment options** for your Business Management Dashboard:
+1. **Desktop Application** - Windows executable for local use
+2. **Web Application** - Cloud deployment using Vercel + Render
 
-## Architecture
+---
 
-- **Frontend**: React + Vite (TypeScript)
-- **Desktop**: Electron wrapper
-- **Backend**: Node.js + Express
-- **Database**: SQLite (file-based, portable)
+## Option 1: Desktop Application (Local Deployment)
 
-## Prerequisites
+Deploy as a Windows desktop application that runs entirely on the user's computer.
 
-- Node.js (v18 or higher)
-- npm
+### Prerequisites
 
-## Installation
+- Node.js installed
+- Windows operating system
 
-1. Install all dependencies:
-```bash
-npm install
-```
+### Step 1: Build the Desktop Application
 
-## Running in Development Mode
-
-### Option 1: Run Everything Together (Recommended)
-```bash
-npm run start:all
-```
-This command starts both the backend server and the Electron app automatically.
-
-### Option 2: Run Components Separately
-
-**Terminal 1 - Backend Server:**
-```bash
-npm run backend:dev
-```
-The backend will run on `http://localhost:3001`
-
-**Terminal 2 - Electron App:**
-```bash
-npm run electron:dev
-```
-This starts the Vite dev server on port 3000 and opens the Electron window.
-
-### Option 3: Web Browser Only (No Desktop App)
-
-**Terminal 1 - Backend Server:**
-```bash
-npm run backend:dev
-```
-
-**Terminal 2 - Frontend Only:**
-```bash
-npm run dev
-```
-Open `http://localhost:3000` in your browser.
-
-## Building for Production (Desktop App)
-
-1. Build the application:
 ```bash
 npm run electron:build
 ```
 
-2. The installer will be created in the `dist` folder:
-   - **Windows**: `dist/GreenBros Dashboard Setup X.X.X.exe`
-   - **macOS**: `dist/GreenBros Dashboard-X.X.X.dmg`
-   - **Linux**: `dist/GreenBros Dashboard-X.X.X.AppImage`
+This creates two installers in the `dist` folder:
+- **GreenBros-Dashboard-Portable.exe** - No installation needed, runs directly
+- **GreenBros-Dashboard Setup.exe** - Traditional installer with Start Menu entry
 
-3. Install the application on your desktop by running the installer.
+### Step 2: Share with Client
 
-## Database Location
+**Option A: Portable Version (Recommended)**
+1. Send `dist/GreenBros-Dashboard-Portable.exe` to your client
+2. Client double-clicks to run - no installation needed
+3. All data stays on their computer
 
-The SQLite database file is stored at:
-```
-backend/greenbros.db
-```
+**Option B: Installer Version**
+1. Send `dist/GreenBros-Dashboard Setup.exe` to your client
+2. Client runs installer
+3. App appears in Start Menu
+4. Can be uninstalled via Windows Settings
 
-### Initial Data
-On first run, the database is automatically seeded with sample data:
-- 4 Clients (Alice Johnson, Bob Williams, Charlie Brown, Diana Miller)
-- 4 Employees (David Green, Eve Gardener, Frank Spade, Grace Roots)
-- 8 Tasks with various statuses
-- 5 Bills with different payment statuses
+### Important Notes for Desktop Deployment
 
-### Backup Your Data
-To backup your data, simply copy the `backend/greenbros.db` file to a safe location.
+**Backend is Bundled:**
+- The backend runs automatically when the app starts
+- No separate backend setup needed
+- Data stored in: `%APPDATA%/greenbros-dashboard/` (or local folder)
 
-To restore, replace the file with your backup.
+**Pros:**
+- ✅ No internet required (works offline)
+- ✅ All data stays private on local machine
+- ✅ No monthly costs
+- ✅ Fast performance
+- ✅ Easy to share (single .exe file)
 
-## API Endpoints
+**Cons:**
+- ❌ Windows only
+- ❌ Must rebuild and reshare for updates
+- ❌ Each user has separate data
+- ❌ No remote access
 
-The backend provides the following REST API endpoints:
+### Development Mode
 
-### Tasks
-- `GET /api/tasks` - Get all tasks
-- `GET /api/tasks/:id` - Get task by ID
-- `POST /api/tasks` - Create new task
-- `PUT /api/tasks/:id` - Update task
-- `PATCH /api/tasks/:id/status` - Update task status only
-- `DELETE /api/tasks/:id` - Delete task
-
-### Clients
-- `GET /api/clients` - Get all clients
-- `GET /api/clients/:id` - Get client by ID
-- `POST /api/clients` - Create new client
-- `PUT /api/clients/:id` - Update client
-- `DELETE /api/clients/:id` - Delete client
-
-### Bills
-- `GET /api/bills` - Get all bills
-- `GET /api/bills/:id` - Get bill by ID
-- `POST /api/bills` - Create new bill
-- `PUT /api/bills/:id` - Update bill
-- `DELETE /api/bills/:id` - Delete bill
-
-### Employees
-- `GET /api/employees` - Get all employees
-- `GET /api/employees/:id` - Get employee by ID
-- `POST /api/employees` - Create new employee
-- `PUT /api/employees/:id` - Update employee
-- `DELETE /api/employees/:id` - Delete employee
-
-## Troubleshooting
-
-### Backend Not Starting
-- Check if port 3001 is already in use
-- Look for error messages in the terminal
-- Ensure all dependencies are installed (`npm install`)
-
-### Frontend Can't Connect to Backend
-- Verify the backend is running on `http://localhost:3001`
-- Check browser console for CORS errors
-- Ensure the API_URL in `context/DataContext.tsx` is correct
-
-### Electron App Not Opening
-- Make sure the dev server (port 3000) is running first
-- Wait for the message "Local: http://localhost:3000/" before Electron opens
-- Check if port 3000 is available
-
-### Database Issues
-- Delete `backend/greenbros.db` to reset the database (will re-seed on next start)
-- Check file permissions on the database file
-
-## Production Deployment Notes
-
-When you build the desktop app with `npm run electron:build`, the packaged application includes:
-- The built frontend (static files)
-- The backend server code
-- The SQLite database
-- All necessary Node.js dependencies
-
-The Electron app automatically starts the backend server when it launches, so users don't need to manually start anything.
-
-## Configuration
-
-### Changing Ports
-
-**Backend Port** (default: 3001):
-Edit `backend/server.js`:
-```javascript
-const PORT = process.env.PORT || 3001;
+For development with hot-reload:
+```bash
+npm run start:all
 ```
 
-**Frontend Port** (default: 3000):
-Edit `vite.config.ts`:
-```typescript
-server: {
-  port: 3000,
-  ...
+This starts both frontend (with auto-refresh) and backend.
+
+---
+
+## Option 2: Web Application (Cloud Deployment)
+
+Deploy to the cloud for browser-based access from anywhere.
+
+### Prerequisites
+
+- GitHub account
+- Vercel account (free tier)
+- Render account (free tier)
+- Your code pushed to GitHub repository
+
+---
+
+## Part 1: Deploy Backend to Render
+
+### Step 1: Prepare Your Repository
+
+1. Push all your code to GitHub
+2. Make sure `.gitignore` excludes `backend/data/database.json` (already configured)
+
+### Step 2: Create Render Account
+
+1. Go to [render.com](https://render.com)
+2. Sign up with your GitHub account
+
+### Step 3: Create New Web Service
+
+1. Click "New +" → "Web Service"
+2. Connect your GitHub repository
+3. Configure the service:
+   - **Name**: `greenbros-dashboard-backend` (or your choice)
+   - **Root Directory**: `backend`
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `node server.js`
+   - **Plan**: Free
+
+### Step 4: Add Environment Variables (Optional)
+
+If you need any environment variables for the backend, add them in the "Environment" section.
+
+### Step 5: Initialize Database
+
+1. After deployment, go to the Render dashboard
+2. Click on your service → "Shell"
+3. Run:
+   ```bash
+   cp data/database.sample.json data/database.json
+   ```
+
+### Step 6: Copy Your Backend URL
+
+- Your backend URL will be: `https://greenbros-dashboard-backend.onrender.com`
+- Copy this URL (you'll need it for frontend deployment)
+
+---
+
+## Part 2: Deploy Frontend to Vercel
+
+### Step 1: Create Vercel Account
+
+1. Go to [vercel.com](https://vercel.com)
+2. Sign up with your GitHub account
+
+### Step 2: Import Your Repository
+
+1. Click "Add New..." → "Project"
+2. Import your GitHub repository
+3. Vercel will auto-detect it as a Vite project
+
+### Step 3: Configure Build Settings
+
+- **Framework Preset**: Vite
+- **Root Directory**: `./` (leave as root)
+- **Build Command**: `npm run build`
+- **Output Directory**: `dist`
+- **Install Command**: `npm install`
+
+### Step 4: Add Environment Variable
+
+In the "Environment Variables" section, add:
+
+- **Name**: `VITE_API_URL`
+- **Value**: `https://greenbros-dashboard-backend.onrender.com/api`
+  (Replace with your actual Render backend URL + `/api`)
+
+### Step 5: Deploy
+
+1. Click "Deploy"
+2. Wait for the build to complete (2-3 minutes)
+3. Your app will be live at: `https://your-project-name.vercel.app`
+
+---
+
+## Part 3: Testing Your Deployment
+
+### Test Backend
+
+Visit: `https://your-backend.onrender.com/api/health`
+
+You should see:
+```json
+{
+  "status": "ok",
+  "message": "Backend is running"
 }
 ```
 
-### API URL
+### Test Frontend
 
-The frontend connects to the backend via the API_URL in `context/DataContext.tsx`:
-```typescript
-const API_URL = 'http://localhost:3001/api';
-```
+1. Visit your Vercel URL
+2. Try creating a task, client, or employee
+3. Refresh the page - data should persist
 
-Change this if you modify the backend port.
+---
 
-## Features
+## Part 4: Updating Your App
 
-- Task management with drag-and-drop status updates
-- Client management
-- Bill/Invoice tracking
-- Employee scheduling with weekly availability
-- Persistent data storage in SQLite
-- Desktop application for easy access
-- Offline-capable (all data stored locally)
+### Update Backend
 
-## Next Steps
+1. Push changes to GitHub
+2. Render will auto-deploy (if auto-deploy is enabled)
+3. Or manually deploy from Render dashboard
 
-Consider adding:
-- User authentication
-- Data export (CSV, PDF)
-- Automated backups
-- Multi-user support with role-based access
-- Cloud sync capabilities
+### Update Frontend
+
+1. Push changes to GitHub
+2. Vercel will auto-deploy
+3. Or manually redeploy from Vercel dashboard
+
+---
+
+## Important Notes
+
+### Free Tier Limitations
+
+**Render Free Tier:**
+- Spins down after 15 minutes of inactivity
+- First request after spin-down takes 30-50 seconds
+- 750 hours/month (sufficient for testing)
+
+**Vercel Free Tier:**
+- 100GB bandwidth/month
+- Unlimited deployments
+- Always fast (no spin-down)
+
+### Data Persistence
+
+- Your data is stored in `backend/data/database.json` on Render
+- **Important**: Free tier may lose data on redeployment
+- For production use, consider upgrading to paid tier or use a database service
+
+### File Uploads
+
+- Uploaded documents are stored in `backend/uploads/`
+- **Important**: Free tier file storage is ephemeral
+- Files may be lost on redeployment
+- For production, consider using cloud storage (AWS S3, Cloudflare R2, etc.)
+
+---
+
+## Troubleshooting
+
+### Backend not connecting
+
+1. Check Render logs for errors
+2. Verify `database.json` exists in `backend/data/`
+3. Check CORS is enabled in backend
+
+### Frontend can't reach backend
+
+1. Verify `VITE_API_URL` environment variable in Vercel
+2. Make sure URL ends with `/api`
+3. Check browser console for CORS errors
+
+### Data not persisting
+
+1. Check backend logs in Render
+2. Verify write permissions for `database.json`
+3. Check if service redeployed (data resets on free tier)
+
+---
+
+---
+
+## Quick Comparison: Desktop vs Web
+
+| Feature | Desktop App | Web App |
+|---------|-------------|---------|
+| **Installation** | Single .exe file | Just a URL |
+| **Internet Required** | No | Yes |
+| **Data Privacy** | Stays on local machine | Stored in cloud |
+| **Cost** | Free forever | Free tier available |
+| **Updates** | Manual redistribution | Automatic |
+| **Access** | Windows only | Any device with browser |
+| **Performance** | Very fast | Depends on connection |
+| **Data Sharing** | Each user separate | Shared database |
+| **Best For** | Single user, privacy-focused | Multiple users, remote access |
+
+---
+
+## Alternative: Quick Local Testing with ngrok
+
+Before deploying to web, test with ngrok to temporarily share locally:
+
+1. Install ngrok: [ngrok.com](https://ngrok.com)
+2. Run backend: `cd backend && node server.js`
+3. In another terminal: `ngrok http 3001`
+4. Share the ngrok URL with your client (temporary, free tier has limitations)
+
+---
+
+## Support
+
+### Desktop App Issues
+- Check if backend is running (Task Manager → GreenBros Dashboard)
+- Check database file location
+- Try running as administrator
+
+### Web App Issues
+- Render logs: Dashboard → Your Service → Logs
+- Vercel logs: Dashboard → Your Project → Deployments → Click deployment → View Function Logs
+- Check browser console for errors (F12)
