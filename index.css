@@ -7,3 +7,5 @@
   --color-brand-brown: #795548;
   --color-brand-gray: #F5F5F5;
 }
+
+@variant dark (&:where(.dark, .dark *));
