@@ -153,11 +153,17 @@ What happens automatically:
 
 ### Step 4: Add Environment Variable
 
+⚠️ **CRITICAL STEP - Don't skip this!**
+
 In the "Environment Variables" section, add:
 
 - **Name**: `VITE_API_URL`
-- **Value**: `https://greenbros-dashboard-backend.onrender.com/api`
-  (Replace with your actual Render backend URL + `/api`)
+- **Value**: Your Render backend URL + `/api`
+  - Example: `https://greenbros-dashboard-app.onrender.com/api`
+  - **Must end with `/api`**
+- **Environments**: Select all (Production, Preview, Development)
+
+Without this environment variable, your frontend will try to connect to `localhost` and fail to load data.
 
 ### Step 5: Deploy
 
