@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ currentView }) => {
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center border-b border-gray-200 dark:border-gray-700">
       <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{title}</h1>
-      <div className="text-gray-600 dark:text-gray-400 font-medium">
+      <div className="text-gray-600 dark:text-gray-400 font-medium hidden sm:block">
         {today}
       </div>
     </header>

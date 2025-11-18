@@ -16,6 +16,7 @@ export type View = 'dashboard' | 'tasks' | 'clients' | 'bills' | 'documents' | '
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true); // Start open on desktop
 
   const renderView = () => {
     switch (currentView) {
@@ -42,7 +43,12 @@ const App: React.FC = () => {
     <ThemeProvider>
       <DataProvider>
         <div className="flex h-screen bg-gray-100 dark:bg-gray-900 font-sans">
-          <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+          <Sidebar
+            currentView={currentView}
+            setCurrentView={setCurrentView}
+            isCollapsed={!sidebarOpen}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
+          />
           <div className="flex-1 flex flex-col overflow-hidden">
             <Header currentView={currentView} />
             <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-800 p-4 md:p-6 lg:p-8">
