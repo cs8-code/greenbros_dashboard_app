@@ -67,10 +67,10 @@ function seedDatabase(db) {
 
   // Insert clients
   const clients = [
-    { id: 'c1', name: 'Alice Johnson', address: 'Eichenweg 123', phone: '555-0101', email: 'alice@example.com' },
-    { id: 'c2', name: 'Bob Williams', address: 'Kiefernstraße 456', phone: '555-0102', email: 'bob@example.com' },
-    { id: 'c3', name: 'Charlie Brown', address: 'Ahorn-Allee 789', phone: '555-0103', email: 'charlie@example.com' },
-    { id: 'c4', name: 'Diana Miller', address: 'Birken-Weg 101', phone: '555-0104', email: 'diana@example.com' },
+    { id: 'c1', name: 'Alidi Sued Filiale 1', address: 'Eichenweg 123', phone: '555-0101', email: 'aldi1@example.com' },
+    { id: 'c2', name: 'Aldi Sued Filiale 2', address: 'Kiefernstraße 456', phone: '555-0102', email: 'aldi2@example.com' },
+    { id: 'c3', name: 'Kita 1', address: 'Ahorn-Allee 789', phone: '555-0103', email: 'kita1@example.com' },
+    { id: 'c4', name: 'Kita 2', address: 'Birken-Weg 101', phone: '555-0104', email: 'kita2@example.com' },
   ];
   clients.forEach(c => {
     db.run('INSERT INTO clients (id, name, address, phone, email) VALUES (?, ?, ?, ?, ?)',
@@ -81,29 +81,25 @@ function seedDatabase(db) {
   const employees = [
     {
       id: 'e1',
-      name: 'David Green',
-      role: 'Chefgärtner',
+      name: 'Fatih',
       avatarUrl: 'https://i.pravatar.cc/150?u=e1',
       availability: JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: false, saturday: false, sunday: false })
     },
     {
       id: 'e2',
-      name: 'Eve Gardener',
-      role: 'Gartenbau-Expertin',
+      name: 'Steven',
       avatarUrl: 'https://i.pravatar.cc/150?u=e2',
       availability: JSON.stringify({ monday: true, tuesday: true, wednesday: false, thursday: true, friday: true, saturday: false, sunday: false })
     },
     {
       id: 'e3',
-      name: 'Frank Spade',
-      role: 'Landschaftsgärtner',
+      name: 'Max',
       avatarUrl: 'https://i.pravatar.cc/150?u=e3',
       availability: JSON.stringify({ monday: false, tuesday: false, wednesday: true, thursday: true, friday: true, saturday: true, sunday: false })
     },
     {
       id: 'e4',
-      name: 'Grace Roots',
-      role: 'Nachwuchs-Gärtnerin',
+      name: 'Moritz',
       avatarUrl: 'https://i.pravatar.cc/150?u=e4',
       availability: JSON.stringify({ monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: false, sunday: false })
     },
