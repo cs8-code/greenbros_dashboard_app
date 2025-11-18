@@ -71,7 +71,8 @@ function initDatabase() {
         { id: 'b3', clientId: 'c3', amount: 1200.00, dueDate: formatDate(today), status: 'due' },
         { id: 'b4', clientId: 'c4', amount: 250.00, dueDate: '2023-12-15', status: 'overdue' },
         { id: 'b5', clientId: 'c2', amount: 75.00, dueDate: '2023-11-20', status: 'paid' },
-      ]
+      ],
+      documents: []
     };
 
     fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));

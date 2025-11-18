@@ -236,17 +236,41 @@ You should see:
 
 ## Troubleshooting
 
+### Common Issue: "Failed to load resource" on Vercel
+
+If your Vercel app shows "Failed to load resource" or no data loads:
+
+**1. Check if VITE_API_URL is set in Vercel:**
+   - Go to Vercel dashboard → Your Project → Settings → Environment Variables
+   - Verify `VITE_API_URL` is set to: `https://your-backend.onrender.com/api`
+   - **Important:** Include `/api` at the end!
+   - If missing or wrong, add/update it and redeploy
+
+**2. Verify your backend is running on Render:**
+   - Go to your Render dashboard → Your Service
+   - Check the status - it should say "Live"
+   - If it says "Deploy failed", check the logs for errors
+   - Test the backend: Visit `https://your-backend.onrender.com/api/health`
+   - You should see: `{"status":"ok","message":"Backend is running"}`
+
+**3. Check for CORS errors:**
+   - Open browser console (F12) on your Vercel site
+   - Look for red CORS errors
+   - If you see CORS errors, the backend CORS is working but might need the Vercel domain added
+
 ### Backend not connecting
 
 1. Check Render logs for errors
 2. Verify `database.json` exists in `backend/data/`
 3. Check CORS is enabled in backend
+4. Ensure `backend/package.json` exists (required for deployment)
 
 ### Frontend can't reach backend
 
 1. Verify `VITE_API_URL` environment variable in Vercel
 2. Make sure URL ends with `/api`
 3. Check browser console for CORS errors
+4. Test backend directly: `https://your-backend.onrender.com/api/health`
 
 ### Data not persisting
 

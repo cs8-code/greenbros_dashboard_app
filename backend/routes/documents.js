@@ -13,11 +13,9 @@ const router = express.Router();
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, '../uploads');
-try {
-  await fs.mkdir(uploadsDir, { recursive: true });
-} catch (err) {
+fs.mkdir(uploadsDir, { recursive: true }).catch(err => {
   console.error('Error creating uploads directory:', err);
-}
+});
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
