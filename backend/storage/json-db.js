@@ -72,7 +72,29 @@ function initDatabase() {
         { id: 'b4', clientId: 'c4', amount: 250.00, dueDate: '2023-12-15', status: 'overdue' },
         { id: 'b5', clientId: 'c2', amount: 75.00, dueDate: '2023-11-20', status: 'paid' },
       ],
-      documents: []
+      documents: [],
+      emails: [
+        {
+          id: 'em1',
+          from: 'kunde@example.com',
+          subject: 'Preisanfrage für Gartenpflege',
+          content: 'Guten Tag,\n\nich interessiere mich für Ihre Gartenpflegedienste. Könnten Sie mir bitte ein Angebot für die regelmäßige Pflege meines Gartens (ca. 500qm) erstellen?\n\nMit freundlichen Grüßen',
+          receivedDate: formatDate(today) + ' 10:30',
+          status: 'unread',
+          keywords: ['Preisanfrage'],
+          attachments: []
+        },
+        {
+          id: 'em2',
+          from: 'mueller@web.de',
+          subject: 'Anfrage: Herbst-Aufräumarbeiten',
+          content: 'Hallo,\n\nich benötige Unterstützung bei den Herbst-Aufräumarbeiten. Wann hätten Sie Zeit?\n\nViele Grüße\nHerr Müller',
+          receivedDate: formatDate(yesterday) + ' 14:20',
+          status: 'read',
+          keywords: ['Anfrage'],
+          attachments: []
+        }
+      ]
     };
 
     fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2));

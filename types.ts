@@ -47,3 +47,16 @@ export interface Document {
   filePath: string;
   fileSize: number; // in bytes
 }
+
+export type EmailStatus = 'unread' | 'read' | 'converted';
+
+export interface Email {
+  id: string;
+  from: string;
+  subject: string;
+  content: string;
+  receivedDate: string; // YYYY-MM-DD HH:mm
+  status: EmailStatus;
+  keywords: string[]; // Keywords that triggered import (e.g., "Preisanfrage")
+  attachments?: string[];
+}

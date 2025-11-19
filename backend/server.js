@@ -5,6 +5,7 @@ import clientsRouter from './routes/clients.js';
 import billsRouter from './routes/bills.js';
 import employeesRouter from './routes/employees.js';
 import documentsRouter from './routes/documents.js';
+import emailsRouter from './routes/emails.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,6 +20,7 @@ app.use('/api/clients', clientsRouter);
 app.use('/api/bills', billsRouter);
 app.use('/api/employees', employeesRouter);
 app.use('/api/documents', documentsRouter);
+app.use('/api/emails', emailsRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
