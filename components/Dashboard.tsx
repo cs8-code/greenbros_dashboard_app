@@ -10,7 +10,6 @@ interface StatCardProps {
     color: string;
     darkColor: string;
 }
-
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color, darkColor }) => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md flex items-center">
         <div className={`p-3 rounded-full mr-4 ${color} ${darkColor}`}>
@@ -148,6 +147,7 @@ const WeeklyCalendar: React.FC = () => {
         }
     };
 
+    
     return (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Aufgaben dieser Woche</h2>
@@ -203,7 +203,7 @@ const WeeklyCalendar: React.FC = () => {
 
 
 const Dashboard: React.FC = () => {
-    const { tasks, clients, bills, employees, getClientById } = useData();
+    const { tasks, clients, bills, employees, getClientById, emails } = useData();
 
     const openTasksCount = tasks.filter(t => t.status === 'open' || t.status === 'in-progress').length;
     const overdueBillsCount = bills.filter(b => b.status === 'overdue').length;
@@ -214,10 +214,11 @@ const Dashboard: React.FC = () => {
     const dayKeys: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDayKey = dayKeys[new Date().getDay()];
     const availableTeam = employees.filter(e => e.availability[currentDayKey]);
+    const unreadEmailsCount = emails.filter(e => !e.status).length; 
 
     return (
         <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard 
                     title="Offene Aufgaben" 
                     value={openTasksCount} 
@@ -238,6 +239,13 @@ const Dashboard: React.FC = () => {
                     color="bg-red-100"
                     darkColor="dark:bg-red-900/50"
                     icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                />
+                 <StatCard 
+                    title="Ungelesene E-Mails" 
+                    value={unreadEmailsCount} 
+                    color="bg-purple-100"
+                    darkColor="dark:bg-purple-900/50"
+                    icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-500 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V6a2 2 0 00-2-2H3a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
                 />
             </div>
 
