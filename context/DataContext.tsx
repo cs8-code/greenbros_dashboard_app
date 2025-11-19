@@ -29,6 +29,8 @@ interface DataContextType {
   updateEmailStatus: (emailId: string, status: EmailStatus) => void;
   deleteEmail: (emailId: string) => void;
   createTaskFromEmail: (email: Email, taskData: Partial<Task>) => void;
+  revertEmailConversion: (emailId: string) => Promise<void>;
+  analyzeEmailWithAI: (emailId: string) => Promise<any>;
   loading: boolean;
 }
 
@@ -404,11 +406,81 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (response.ok) {
         setTasks(prevTasks => [newTask, ...prevTasks]);
-        // Mark email as converted
-        await updateEmailStatus(email.id, 'converted');
+
+        // Update email status to converted and store task ID
+        const updateResponse = await fetch(`${API_URL}/emails/${email.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'converted', relatedTaskId: newTask.id }),
+        });
+
+        if (updateResponse.ok) {
+          setEmails(prevEmails =>
+            prevEmails.map(e =>
+              e.id === email.id ? { ...e, status: 'converted', relatedTaskId: newTask.id } : e
+            )
+          );
+        }
       }
     } catch (error) {
       console.error('Error creating task from email:', error);
+    }
+  };
+
+  // Revert Email Conversion
+  const revertEmailConversion = async (emailId: string) => {
+    const email = emails.find(e => e.id === emailId);
+    if (!email || !email.relatedTaskId) {
+      console.error('Email not found or no related task');
+      return;
+    }
+
+    try {
+      // Delete the related task
+      const deleteResponse = await fetch(`${API_URL}/tasks/${email.relatedTaskId}`, {
+        method: 'DELETE',
+      });
+
+      if (deleteResponse.ok) {
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== email.relatedTaskId));
+
+        // Update email status back to read and remove task reference
+        const updateResponse = await fetch(`${API_URL}/emails/${emailId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'read', relatedTaskId: null }),
+        });
+
+        if (updateResponse.ok) {
+          setEmails(prevEmails =>
+            prevEmails.map(e =>
+              e.id === emailId ? { ...e, status: 'read', relatedTaskId: undefined } : e
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error reverting email conversion:', error);
+      throw error;
+    }
+  };
+
+  // Analyze Email with AI
+  const analyzeEmailWithAI = async (emailId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/emails/${emailId}/analyze`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const analysis = await response.json();
+        return analysis;
+      } else {
+        throw new Error('Failed to analyze email');
+      }
+    } catch (error) {
+      console.error('Error analyzing email with AI:', error);
+      throw error;
     }
   };
 
@@ -439,6 +511,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateEmailStatus,
       deleteEmail,
       createTaskFromEmail,
+      revertEmailConversion,
+      analyzeEmailWithAI,
       loading
     }}>
       {children}

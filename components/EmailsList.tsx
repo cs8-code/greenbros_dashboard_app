@@ -5,11 +5,12 @@ import Modal from './Modal';
 import TaskFormModal from './TaskFormModal';
 
 const EmailsList: React.FC = () => {
-  const { emails, updateEmailStatus, deleteEmail, createTaskFromEmail, addEmail, clients, employees } = useData();
+  const { emails, updateEmailStatus, deleteEmail, createTaskFromEmail, revertEmailConversion, addEmail, analyzeEmailWithAI, clients, employees } = useData();
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showAddEmailModal, setShowAddEmailModal] = useState(false);
   const [newEmail, setNewEmail] = useState({ from: '', subject: '', content: '', keywords: '' });
+  const [analyzingEmailId, setAnalyzingEmailId] = useState<string | null>(null);
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -44,6 +45,53 @@ const EmailsList: React.FC = () => {
   const handleCloseTaskModal = () => {
     setShowTaskModal(false);
     setSelectedEmail(null);
+  };
+
+  const handleRevertConversion = async (emailId: string) => {
+    if (confirm('Möchten Sie die Aufgabe wirklich löschen und die Email-Konvertierung rückgängig machen?')) {
+      try {
+        await revertEmailConversion(emailId);
+        alert('✅ Email-Konvertierung wurde rückgängig gemacht.');
+      } catch (error) {
+        console.error('Error reverting conversion:', error);
+        alert('❌ Fehler beim Rückgängigmachen.');
+      }
+    }
+  };
+
+  const handleAnalyzeWithAI = async (email: Email) => {
+    setAnalyzingEmailId(email.id);
+    try {
+      const analysis = await analyzeEmailWithAI(email.id);
+
+      // Create a summary message to show what the AI found
+      const summaryParts = [
+        `📧 Email-Typ: ${analysis.emailType}`,
+        analysis.customerName ? `👤 Kunde: ${analysis.customerName}` : null,
+        analysis.customerPhone ? `📱 Telefon: ${analysis.customerPhone}` : null,
+        `🔧 Service: ${analysis.serviceRequested}`,
+        `⚠️ Dringlichkeit: ${analysis.urgency}`,
+        analysis.location ? `📍 Standort: ${analysis.location}` : null,
+        analysis.estimatedDuration ? `⏱️ Dauer: ${analysis.estimatedDuration}` : null,
+      ].filter(Boolean);
+
+      const summary = `🤖 AI Analyse:\n\n${summaryParts.join('\n')}\n\n${analysis.matchingClient ? `✅ Passender Kunde gefunden: ${clients.find(c => c.id === analysis.matchingClient)?.name}` : '❌ Kein passender Kunde gefunden'}`;
+
+      alert(summary);
+
+      // Open task modal with AI-suggested data pre-filled
+      setSelectedEmail({
+        ...email,
+        // Store AI analysis in a custom property for reference
+        aiAnalysis: analysis
+      } as any);
+      setShowTaskModal(true);
+    } catch (error) {
+      console.error('Error analyzing email:', error);
+      alert('❌ Fehler bei der AI-Analyse. Bitte versuchen Sie es erneut.');
+    } finally {
+      setAnalyzingEmailId(null);
+    }
   };
 
   const handleAddEmail = async () => {
@@ -168,7 +216,7 @@ const EmailsList: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex gap-2 flex-wrap">
                 {email.status === 'unread' && (
                   <button
                     onClick={() => handleMarkAsRead(email.id)}
@@ -178,11 +226,40 @@ const EmailsList: React.FC = () => {
                   </button>
                 )}
                 {email.status !== 'converted' && (
+                  <>
+                    <button
+                      onClick={() => handleAnalyzeWithAI(email)}
+                      disabled={analyzingEmailId === email.id}
+                      className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {analyzingEmailId === email.id ? (
+                        <>
+                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Analysiert...
+                        </>
+                      ) : (
+                        <>
+                          🤖 AI Analysieren
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleCreateTask(email)}
+                      className="px-3 py-1.5 text-sm bg-brand-green text-white rounded hover:bg-brand-green-dark transition-colors"
+                    >
+                      Aufgabe erstellen
+                    </button>
+                  </>
+                )}
+                {email.status === 'converted' && (
                   <button
-                    onClick={() => handleCreateTask(email)}
-                    className="px-3 py-1.5 text-sm bg-brand-green text-white rounded hover:bg-brand-green-dark transition-colors"
+                    onClick={() => handleRevertConversion(email.id)}
+                    className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
                   >
-                    Aufgabe erstellen
+                    Widerrufen
                   </button>
                 )}
                 <button
@@ -275,11 +352,11 @@ const EmailsList: React.FC = () => {
           onSave={handleSaveTask}
           task={{
             id: '',
-            title: selectedEmail.subject,
-            description: selectedEmail.content,
-            clientId: '',
+            title: (selectedEmail as any).aiAnalysis?.suggestedTaskTitle || selectedEmail.subject,
+            description: (selectedEmail as any).aiAnalysis?.suggestedTaskDescription || selectedEmail.content,
+            clientId: (selectedEmail as any).aiAnalysis?.matchingClient || '',
             assignedTo: [],
-            dueDate: new Date().toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             status: 'open'
           }}
         />

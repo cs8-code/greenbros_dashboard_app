@@ -59,4 +59,5 @@ export interface Email {
   status: EmailStatus;
   keywords: string[]; // Keywords that triggered import (e.g., "Preisanfrage")
   attachments?: string[];
+  relatedTaskId?: string; // ID of task created from this email
 }

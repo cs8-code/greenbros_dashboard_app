@@ -1,5 +1,6 @@
 import express from 'express';
 import { db } from '../storage/json-db.js';
+import { analyzeEmail } from '../services/ai-analyzer.js';
 
 const router = express.Router();
 
@@ -49,6 +50,21 @@ router.post('/', (req, res) => {
   }
 });
 
+// PUT update email (full update)
+router.put('/:id', (req, res) => {
+  try {
+    const updated = db.update('emails', req.params.id, req.body);
+
+    if (!updated) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // PATCH update email status
 router.patch('/:id/status', (req, res) => {
   try {
@@ -76,6 +92,24 @@ router.delete('/:id', (req, res) => {
 
     res.json({ message: 'Email deleted successfully' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST analyze email with AI
+router.post('/:id/analyze', async (req, res) => {
+  try {
+    const email = db.getById('emails', req.params.id);
+    if (!email) {
+      return res.status(404).json({ error: 'Email not found' });
+    }
+
+    const clients = db.getAll('clients');
+    const analysis = await analyzeEmail(email.content, email.subject, clients);
+
+    res.json(analysis);
+  } catch (error) {
+    console.error('Error analyzing email:', error);
     res.status(500).json({ error: error.message });
   }
 });
