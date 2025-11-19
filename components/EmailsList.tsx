@@ -242,7 +242,7 @@ const EmailsList: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          🤖 AI Analysieren
+                          🤖 Automatisieren
                         </>
                       )}
                     </button>
