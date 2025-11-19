@@ -11,6 +11,8 @@ const viewTitles: Record<View, string> = {
     tasks: 'Auftragsplaner',
     clients: 'Kunden',
     bills: 'Dokumente',
+    documents: 'Dokumente',
+    emails: 'Email-Anfragen',
     team: 'Team',
     calendar: 'Kalender',
 };

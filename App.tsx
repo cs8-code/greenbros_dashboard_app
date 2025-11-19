@@ -8,6 +8,7 @@ import BillsList from './components/BillsList';
 import Documents from './components/Documents';
 import TeamList from './components/TeamList';
 import CalendarView from './components/CalendarView';
+import EmailsList from './components/EmailsList';
 import Header from './components/Header';
 import { DataProvider } from './context/DataContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -34,6 +35,8 @@ const App: React.FC = () => {
         return <TeamList />;
       case 'calendar':
         return <CalendarView />;
+      case 'emails':
+        return <EmailsList />;
       default:
         return <Dashboard />;
     }

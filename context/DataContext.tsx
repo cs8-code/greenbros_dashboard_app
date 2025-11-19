@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Task, Client, Bill, Employee, TaskStatus, Document, DocumentType } from '../types';
+import { Task, Client, Bill, Employee, TaskStatus, Document, DocumentType, Email, EmailStatus } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -9,6 +9,7 @@ interface DataContextType {
   bills: Bill[];
   employees: Employee[];
   documents: Document[];
+  emails: Email[];
   updateTaskStatus: (taskId: string, newStatus: TaskStatus) => void;
   getClientById: (clientId: string) => Client | undefined;
   getEmployeeById: (employeeId: string) => Employee | undefined;
@@ -24,6 +25,10 @@ interface DataContextType {
   uploadDocument: (file: File, type: DocumentType) => Promise<void>;
   deleteDocument: (documentId: string) => void;
   downloadDocument: (documentId: string, fileName: string) => void;
+  addEmail: (email: Omit<Email, 'id' | 'status' | 'receivedDate'>) => void;
+  updateEmailStatus: (emailId: string, status: EmailStatus) => void;
+  deleteEmail: (emailId: string) => void;
+  createTaskFromEmail: (email: Email, taskData: Partial<Task>) => void;
   loading: boolean;
 }
 
@@ -35,6 +40,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [bills, setBills] = useState<Bill[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch all data on mount
@@ -45,20 +51,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [tasksRes, clientsRes, billsRes, employeesRes, documentsRes] = await Promise.all([
+      const [tasksRes, clientsRes, billsRes, employeesRes, documentsRes, emailsRes] = await Promise.all([
         fetch(`${API_URL}/tasks`),
         fetch(`${API_URL}/clients`),
         fetch(`${API_URL}/bills`),
         fetch(`${API_URL}/employees`),
         fetch(`${API_URL}/documents`),
+        fetch(`${API_URL}/emails`),
       ]);
 
-      const [tasksData, clientsData, billsData, employeesData, documentsData] = await Promise.all([
+      const [tasksData, clientsData, billsData, employeesData, documentsData, emailsData] = await Promise.all([
         tasksRes.json(),
         clientsRes.json(),
         billsRes.json(),
         employeesRes.json(),
         documentsRes.json(),
+        emailsRes.json(),
       ]);
 
       setTasks(tasksData);
@@ -66,6 +74,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setBills(billsData);
       setEmployees(employeesData);
       setDocuments(documentsData);
+      setEmails(emailsData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -315,6 +324,89 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     link.click();
   };
 
+  // Add Email (manual import)
+  const addEmail = async (emailData: Omit<Email, 'id' | 'status' | 'receivedDate'>) => {
+    try {
+      const response = await fetch(`${API_URL}/emails`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailData),
+      });
+
+      if (response.ok) {
+        const newEmail = await response.json();
+        setEmails(prevEmails => [newEmail, ...prevEmails]);
+      }
+    } catch (error) {
+      console.error('Error adding email:', error);
+    }
+  };
+
+  // Update Email Status
+  const updateEmailStatus = async (emailId: string, status: EmailStatus) => {
+    try {
+      const response = await fetch(`${API_URL}/emails/${emailId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+
+      if (response.ok) {
+        setEmails(prevEmails =>
+          prevEmails.map(email =>
+            email.id === emailId ? { ...email, status } : email
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error updating email status:', error);
+    }
+  };
+
+  // Delete Email
+  const deleteEmail = async (emailId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/emails/${emailId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setEmails(prevEmails => prevEmails.filter(email => email.id !== emailId));
+      }
+    } catch (error) {
+      console.error('Error deleting email:', error);
+    }
+  };
+
+  // Create Task from Email
+  const createTaskFromEmail = async (email: Email, taskData: Partial<Task>) => {
+    const newTask: Task = {
+      id: `t${Date.now()}`,
+      title: taskData.title || email.subject,
+      clientId: taskData.clientId || '',
+      assignedTo: taskData.assignedTo || [],
+      dueDate: taskData.dueDate || new Date().toISOString().split('T')[0],
+      status: 'open',
+      description: taskData.description || email.content,
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTask),
+      });
+
+      if (response.ok) {
+        setTasks(prevTasks => [newTask, ...prevTasks]);
+        // Mark email as converted
+        await updateEmailStatus(email.id, 'converted');
+      }
+    } catch (error) {
+      console.error('Error creating task from email:', error);
+    }
+  };
+
   return (
     <DataContext.Provider value={{
       tasks,
@@ -322,6 +414,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       bills,
       employees,
       documents,
+      emails,
       updateTaskStatus,
       getClientById,
       getEmployeeById,
@@ -337,6 +430,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       uploadDocument,
       deleteDocument,
       downloadDocument,
+      addEmail,
+      updateEmailStatus,
+      deleteEmail,
+      createTaskFromEmail,
       loading
     }}>
       {children}
