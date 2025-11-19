@@ -10,7 +10,6 @@ const viewTitles: Record<View, string> = {
     dashboard: 'Dashboard',
     tasks: 'Auftragsplaner',
     clients: 'Kunden',
-    bills: 'Dokumente',
     documents: 'Dokumente',
     emails: 'Email-Anfragen',
     team: 'Team',

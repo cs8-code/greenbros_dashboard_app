@@ -13,7 +13,7 @@ import Header from './components/Header';
 import { DataProvider } from './context/DataContext';
 import { ThemeProvider } from './context/ThemeContext';
 
-export type View = 'dashboard' | 'tasks' | 'clients' | 'bills' | 'documents' | 'team' | 'calendar' | 'emails';
+export type View = 'dashboard' | 'tasks' | 'clients' | 'documents' | 'team' | 'calendar' | 'emails';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -27,8 +27,6 @@ const App: React.FC = () => {
         return <TasksBoard />;
       case 'clients':
         return <ClientsList />;
-      case 'bills':
-        return <BillsList />;
       case 'documents':
         return <Documents />;
       case 'team':

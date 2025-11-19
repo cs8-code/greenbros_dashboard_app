@@ -33,21 +33,48 @@ const EmailsList: React.FC = () => {
     setShowTaskModal(true);
   };
 
-  const handleTaskCreated = () => {
+  const handleSaveTask = async (taskData: any) => {
+    if (selectedEmail) {
+      await createTaskFromEmail(selectedEmail, taskData);
+    }
     setShowTaskModal(false);
     setSelectedEmail(null);
   };
 
-  const handleAddEmail = () => {
-    addEmail({
-      from: newEmail.from,
-      subject: newEmail.subject,
-      content: newEmail.content,
-      keywords: newEmail.keywords.split(',').map(k => k.trim()).filter(k => k),
-      attachments: []
-    });
-    setShowAddEmailModal(false);
-    setNewEmail({ from: '', subject: '', content: '', keywords: '' });
+  const handleCloseTaskModal = () => {
+    setShowTaskModal(false);
+    setSelectedEmail(null);
+  };
+
+  const handleAddEmail = async () => {
+    // Validation
+    if (!newEmail.from.trim()) {
+      alert('Bitte geben Sie eine Email-Adresse ein');
+      return;
+    }
+    if (!newEmail.subject.trim()) {
+      alert('Bitte geben Sie einen Betreff ein');
+      return;
+    }
+    if (!newEmail.content.trim()) {
+      alert('Bitte geben Sie den Email-Inhalt ein');
+      return;
+    }
+
+    try {
+      await addEmail({
+        from: newEmail.from,
+        subject: newEmail.subject,
+        content: newEmail.content,
+        keywords: newEmail.keywords.split(',').map(k => k.trim()).filter(k => k),
+        attachments: []
+      });
+      setShowAddEmailModal(false);
+      setNewEmail({ from: '', subject: '', content: '', keywords: '' });
+    } catch (error) {
+      console.error('Error adding email:', error);
+      alert('Fehler beim Importieren der Email');
+    }
   };
 
   const unreadCount = emails.filter(e => e.status === 'unread').length;
@@ -172,7 +199,7 @@ const EmailsList: React.FC = () => {
 
       {/* Add Email Modal */}
       {showAddEmailModal && (
-        <Modal onClose={() => setShowAddEmailModal(false)} title="Email importieren">
+        <Modal isOpen={showAddEmailModal} onClose={() => setShowAddEmailModal(false)} title="Email importieren">
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -242,33 +269,20 @@ const EmailsList: React.FC = () => {
 
       {/* Create Task Modal */}
       {showTaskModal && selectedEmail && (
-        <Modal
-          onClose={() => {
-            setShowTaskModal(false);
-            setSelectedEmail(null);
+        <TaskFormModal
+          isOpen={showTaskModal}
+          onClose={handleCloseTaskModal}
+          onSave={handleSaveTask}
+          task={{
+            id: '',
+            title: selectedEmail.subject,
+            description: selectedEmail.content,
+            clientId: '',
+            assignedTo: [],
+            dueDate: new Date().toISOString().split('T')[0],
+            status: 'open'
           }}
-          title="Aufgabe aus Email erstellen"
-        >
-          <div className="space-y-4">
-            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-4">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Email-Details:</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                <strong>Betreff:</strong> {selectedEmail.subject}
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                <strong>Von:</strong> {selectedEmail.from}
-              </p>
-            </div>
-
-            <TaskFormModal
-              onClose={handleTaskCreated}
-              initialData={{
-                title: selectedEmail.subject,
-                description: selectedEmail.content,
-              }}
-            />
-          </div>
-        </Modal>
+        />
       )}
     </div>
   );

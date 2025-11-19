@@ -25,7 +25,7 @@ interface DataContextType {
   uploadDocument: (file: File, type: DocumentType) => Promise<void>;
   deleteDocument: (documentId: string) => void;
   downloadDocument: (documentId: string, fileName: string) => void;
-  addEmail: (email: Omit<Email, 'id' | 'status' | 'receivedDate'>) => void;
+  addEmail: (email: Omit<Email, 'id' | 'status' | 'receivedDate'>) => Promise<void>;
   updateEmailStatus: (emailId: string, status: EmailStatus) => void;
   deleteEmail: (emailId: string) => void;
   createTaskFromEmail: (email: Email, taskData: Partial<Task>) => void;
@@ -336,9 +336,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (response.ok) {
         const newEmail = await response.json();
         setEmails(prevEmails => [newEmail, ...prevEmails]);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to add email. Status:', response.status, 'Error:', errorText);
+        throw new Error(`Failed to add email: ${response.status}`);
       }
     } catch (error) {
       console.error('Error adding email:', error);
+      throw error;
     }
   };
 
