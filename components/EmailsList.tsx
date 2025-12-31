@@ -1,16 +1,45 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
-import { Email } from '../types';
+import { Email, EmailType } from '../types';
 import Modal from './Modal';
 import TaskFormModal from './TaskFormModal';
+import ComposeEmailModal from './ComposeEmailModal';
+
+// Safe button component that prevents form submission
+const SafeButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ onClick, children, ...props }) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('SafeButton clicked');
+    if (onClick) {
+      onClick(e);
+    }
+  };
+
+  return (
+    <button {...props} type="button" onClick={handleClick}>
+      {children}
+    </button>
+  );
+};
 
 const EmailsList: React.FC = () => {
-  const { emails, updateEmailStatus, deleteEmail, createTaskFromEmail, revertEmailConversion, addEmail, analyzeEmailWithAI, clients, employees } = useData();
+  const { emails, updateEmailStatus, deleteEmail, createTaskFromEmail, revertEmailConversion, addEmail, sendEmail, fetchEmailsFromGmail, analyzeEmailWithAI, clients, employees } = useData();
+  const [activeTab, setActiveTab] = useState<EmailType>('received');
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const [showAddEmailModal, setShowAddEmailModal] = useState(false);
-  const [newEmail, setNewEmail] = useState({ from: '', subject: '', content: '', keywords: '' });
+  const [showComposeModal, setShowComposeModal] = useState(false);
   const [analyzingEmailId, setAnalyzingEmailId] = useState<string | null>(null);
+  const [fetchingEmails, setFetchingEmails] = useState(false);
+
+  // Helper to prevent all event propagation
+  const preventEventPropagation = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (e.nativeEvent) {
+      e.nativeEvent.stopImmediatePropagation();
+      e.nativeEvent.stopPropagation();
+    }
+  };
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -25,21 +54,32 @@ const EmailsList: React.FC = () => {
     }
   };
 
-  const handleMarkAsRead = (emailId: string) => {
+  const handleMarkAsRead = (e: React.MouseEvent, emailId: string) => {
+    preventEventPropagation(e);
     updateEmailStatus(emailId, 'read');
   };
 
-  const handleCreateTask = (email: Email) => {
+  const handleCreateTask = (e: React.MouseEvent, email: Email) => {
+    preventEventPropagation(e);
     setSelectedEmail(email);
     setShowTaskModal(true);
   };
 
   const handleSaveTask = async (taskData: any) => {
-    if (selectedEmail) {
-      await createTaskFromEmail(selectedEmail, taskData);
+    console.log('📝 handleSaveTask called');
+    try {
+      if (selectedEmail) {
+        console.log('🔄 Calling createTaskFromEmail...');
+        await createTaskFromEmail(selectedEmail, taskData);
+        console.log('✅ createTaskFromEmail completed');
+      }
+      console.log('🔒 Closing modal...');
+      setShowTaskModal(false);
+      setSelectedEmail(null);
+      console.log('✅ handleSaveTask completed');
+    } catch (error) {
+      console.error('❌ Error in handleSaveTask:', error);
     }
-    setShowTaskModal(false);
-    setSelectedEmail(null);
   };
 
   const handleCloseTaskModal = () => {
@@ -47,7 +87,8 @@ const EmailsList: React.FC = () => {
     setSelectedEmail(null);
   };
 
-  const handleRevertConversion = async (emailId: string) => {
+  const handleRevertConversion = async (e: React.MouseEvent, emailId: string) => {
+    preventEventPropagation(e);
     if (confirm('Möchten Sie die Aufgabe wirklich löschen und die Email-Konvertierung rückgängig machen?')) {
       try {
         await revertEmailConversion(emailId);
@@ -59,7 +100,8 @@ const EmailsList: React.FC = () => {
     }
   };
 
-  const handleAnalyzeWithAI = async (email: Email) => {
+  const handleAnalyzeWithAI = async (e: React.MouseEvent, email: Email) => {
+    preventEventPropagation(e);
     setAnalyzingEmailId(email.id);
     try {
       const analysis = await analyzeEmailWithAI(email.id);
@@ -94,41 +136,39 @@ const EmailsList: React.FC = () => {
     }
   };
 
-  const handleAddEmail = async () => {
-    // Validation
-    if (!newEmail.from.trim()) {
-      alert('Bitte geben Sie eine Email-Adresse ein');
-      return;
-    }
-    if (!newEmail.subject.trim()) {
-      alert('Bitte geben Sie einen Betreff ein');
-      return;
-    }
-    if (!newEmail.content.trim()) {
-      alert('Bitte geben Sie den Email-Inhalt ein');
-      return;
-    }
-
+  const handleFetchEmails = async () => {
+    setFetchingEmails(true);
     try {
-      await addEmail({
-        from: newEmail.from,
-        subject: newEmail.subject,
-        content: newEmail.content,
-        keywords: newEmail.keywords.split(',').map(k => k.trim()).filter(k => k),
-        attachments: []
-      });
-      setShowAddEmailModal(false);
-      setNewEmail({ from: '', subject: '', content: '', keywords: '' });
+      const count = await fetchEmailsFromGmail();
+      if (count === 0) {
+        alert('Keine neuen Emails gefunden');
+      } else {
+        alert(`${count} neue Email(s) wurden abgerufen!`);
+      }
     } catch (error) {
-      console.error('Error adding email:', error);
-      alert('Fehler beim Importieren der Email');
+      console.error('Error fetching emails:', error);
+      alert('Fehler beim Abrufen der Emails. Bitte überprüfen Sie Ihre Verbindung und Gmail-Konfiguration.');
+    } finally {
+      setFetchingEmails(false);
     }
   };
 
-  const unreadCount = emails.filter(e => e.status === 'unread').length;
+  const filteredEmails = emails.filter(e => e.type === activeTab);
+  const unreadCount = emails.filter(e => e.status === 'unread' && e.type === 'received').length;
+  const receivedCount = emails.filter(e => e.type === 'received').length;
+  const sentCount = emails.filter(e => e.type === 'sent').length;
 
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      onClick={(e) => e.stopPropagation()}
+      onSubmit={(e) => {
+        console.log('⚠️ Form submission blocked!');
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }}
+    >
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -139,27 +179,92 @@ const EmailsList: React.FC = () => {
             {unreadCount} ungelesene Anfrage{unreadCount !== 1 ? 'n' : ''}
           </p>
         </div>
+        <div className="flex gap-2">
+          {activeTab === 'received' && (
+            <button
+              type="button"
+              onClick={(e) => {
+                preventEventPropagation(e);
+                handleFetchEmails();
+              }}
+              disabled={fetchingEmails}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {fetchingEmails ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Abrufen...
+                </>
+              ) : (
+                <>
+                  ↻ Emails abrufen
+                </>
+              )}
+            </button>
+          )}
+          {activeTab === 'sent' && (
+            <button
+              type="button"
+              onClick={(e) => {
+                preventEventPropagation(e);
+                setShowComposeModal(true);
+              }}
+              className="px-4 py-2 bg-brand-green text-white rounded-lg hover:bg-brand-green-dark transition-colors"
+            >
+              + Neue Email senden
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
         <button
-          onClick={() => setShowAddEmailModal(true)}
-          className="px-4 py-2 bg-brand-green text-white rounded-lg hover:bg-brand-green-dark transition-colors"
+          type="button"
+          onClick={(e) => {
+            preventEventPropagation(e);
+            setActiveTab('received');
+          }}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'received'
+              ? 'border-b-2 border-brand-green text-brand-green'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
         >
-          + Email importieren
+          Empfangen ({receivedCount})
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            preventEventPropagation(e);
+            setActiveTab('sent');
+          }}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'sent'
+              ? 'border-b-2 border-brand-green text-brand-green'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
+        >
+          Gesendet ({sentCount})
         </button>
       </div>
 
       {/* Email List */}
       <div className="space-y-4">
-        {emails.length === 0 ? (
+        {filteredEmails.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg">
             <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Keine Emails vorhanden
+              {activeTab === 'received' ? 'Keine empfangenen Emails' : 'Keine gesendeten Emails'}
             </p>
           </div>
         ) : (
-          emails.map((email) => (
+          filteredEmails.map((email) => (
             <div
               key={email.id}
               className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border-l-4 ${
@@ -186,7 +291,7 @@ const EmailsList: React.FC = () => {
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      {email.from}
+                      {email.type === 'received' ? `Von: ${email.from}` : `An: ${email.to}`}
                     </span>
                     <span className="flex items-center gap-1">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,18 +322,20 @@ const EmailsList: React.FC = () => {
 
               {/* Actions */}
               <div className="mt-4 flex gap-2 flex-wrap">
-                {email.status === 'unread' && (
+                {email.status === 'unread' && email.type === 'received' && (
                   <button
-                    onClick={() => handleMarkAsRead(email.id)}
+                    type="button"
+                    onClick={(e) => handleMarkAsRead(e, email.id)}
                     className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   >
                     Als gelesen markieren
                   </button>
                 )}
-                {email.status !== 'converted' && (
+                {email.status !== 'converted' && email.type === 'received' && (
                   <>
                     <button
-                      onClick={() => handleAnalyzeWithAI(email)}
+                      type="button"
+                      onClick={(e) => handleAnalyzeWithAI(e, email)}
                       disabled={analyzingEmailId === email.id}
                       className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
@@ -246,103 +353,38 @@ const EmailsList: React.FC = () => {
                         </>
                       )}
                     </button>
-                    <button
-                      onClick={() => handleCreateTask(email)}
+                    <SafeButton
+                      onClick={(e) => handleCreateTask(e, email)}
                       className="px-3 py-1.5 text-sm bg-brand-green text-white rounded hover:bg-brand-green-dark transition-colors"
                     >
-                      Aufgabe erstellen
-                    </button>
+                      Auftrag erstellen
+                    </SafeButton>
                   </>
                 )}
                 {email.status === 'converted' && (
                   <button
-                    onClick={() => handleRevertConversion(email.id)}
+                    type="button"
+                    onClick={(e) => handleRevertConversion(e, email.id)}
                     className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
                   >
                     Widerrufen
                   </button>
                 )}
-                <button
-                  onClick={() => deleteEmail(email.id)}
+                <SafeButton
+                  onClick={(e) => {
+                    preventEventPropagation(e);
+                    deleteEmail(email.id);
+                  }}
                   className="px-3 py-1.5 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
                 >
                   Löschen
-                </button>
+                </SafeButton>
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Add Email Modal */}
-      {showAddEmailModal && (
-        <Modal isOpen={showAddEmailModal} onClose={() => setShowAddEmailModal(false)} title="Email importieren">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Von (Email-Adresse)
-              </label>
-              <input
-                type="email"
-                value={newEmail.from}
-                onChange={(e) => setNewEmail({ ...newEmail, from: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-green dark:bg-gray-700 dark:text-gray-100"
-                placeholder="kunde@example.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Betreff
-              </label>
-              <input
-                type="text"
-                value={newEmail.subject}
-                onChange={(e) => setNewEmail({ ...newEmail, subject: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-green dark:bg-gray-700 dark:text-gray-100"
-                placeholder="Preisanfrage für Gartenpflege"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Inhalt
-              </label>
-              <textarea
-                value={newEmail.content}
-                onChange={(e) => setNewEmail({ ...newEmail, content: e.target.value })}
-                rows={6}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-green dark:bg-gray-700 dark:text-gray-100"
-                placeholder="Email-Text..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Keywords (Komma-getrennt)
-              </label>
-              <input
-                type="text"
-                value={newEmail.keywords}
-                onChange={(e) => setNewEmail({ ...newEmail, keywords: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-green dark:bg-gray-700 dark:text-gray-100"
-                placeholder="Preisanfrage, Angebot, Gartenpflege"
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowAddEmailModal(false)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={handleAddEmail}
-                className="px-4 py-2 bg-brand-green text-white rounded-lg hover:bg-brand-green-dark transition-colors"
-              >
-                Email importieren
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
 
       {/* Create Task Modal */}
       {showTaskModal && selectedEmail && (
@@ -361,6 +403,12 @@ const EmailsList: React.FC = () => {
           }}
         />
       )}
+
+      {/* Compose Email Modal */}
+      <ComposeEmailModal
+        isOpen={showComposeModal}
+        onClose={() => setShowComposeModal(false)}
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import express from 'express';
 import { db } from '../storage/json-db.js';
 import { analyzeEmail } from '../services/ai-analyzer.js';
+import { fetchNewEmails } from '../services/email-fetcher.js';
 
 const router = express.Router();
 
@@ -27,18 +28,33 @@ router.get('/:id', (req, res) => {
   }
 });
 
-// POST create new email (manual import)
+// POST create new email (manual import or sent email)
 router.post('/', (req, res) => {
   try {
-    const { from, subject, content, keywords, attachments } = req.body;
+    const { from, to, subject, content, keywords, attachments, type } = req.body;
+
+    // Validate required fields
+    if (!subject || !content) {
+      return res.status(400).json({ error: 'Subject and content are required' });
+    }
+
+    // Determine email type (default to 'received' for backward compatibility)
+    const emailType = type || 'received';
+
+    // Validate recipient for sent emails
+    if (emailType === 'sent' && !to) {
+      return res.status(400).json({ error: 'Recipient (to) is required for sent emails' });
+    }
 
     const newEmail = {
       id: `em${Date.now()}`,
-      from,
+      type: emailType,
+      from: from || 'office@greenbros.de',
+      to: to || undefined,
       subject,
       content,
       receivedDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      status: 'unread',
+      status: emailType === 'sent' ? 'read' : 'unread',
       keywords: keywords || [],
       attachments: attachments || []
     };
@@ -111,6 +127,58 @@ router.post('/:id/analyze', async (req, res) => {
   } catch (error) {
     console.error('Error analyzing email:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// POST fetch new emails from Gmail
+router.post('/fetch', async (req, res) => {
+  try {
+    console.log('Fetching new emails from Gmail...');
+    const newEmails = await fetchNewEmails();
+
+    // Check for duplicates and save each email to database
+    const existingEmails = db.getAll('emails');
+    const savedEmails = [];
+
+    for (const emailData of newEmails) {
+      // Check if email already exists (simple duplicate detection)
+      const isDuplicate = existingEmails.some(e =>
+        e.from === emailData.from &&
+        e.subject === emailData.subject &&
+        Math.abs(new Date(e.receivedDate) - new Date()) < 60000 // Within 1 minute
+      );
+
+      if (!isDuplicate) {
+        const newEmail = {
+          id: `em${Date.now()}${Math.floor(Math.random() * 1000)}`,
+          type: emailData.type,
+          from: emailData.from,
+          subject: emailData.subject,
+          content: emailData.content,
+          receivedDate: new Date().toISOString().replace('T', ' ').substring(0, 16),
+          status: emailData.status,
+          keywords: emailData.keywords,
+          attachments: []
+        };
+
+        db.create('emails', newEmail);
+        savedEmails.push(newEmail);
+      }
+    }
+
+    console.log(`Saved ${savedEmails.length} new email(s) to database`);
+
+    res.json({
+      success: true,
+      count: savedEmails.length,
+      emails: savedEmails
+    });
+  } catch (error) {
+    console.error('Error fetching emails:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
   }
 });
 

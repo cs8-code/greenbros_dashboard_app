@@ -100,7 +100,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose }) => {
               Abbrechen
             </button>
             <button type="submit" className="ml-3 px-4 py-2 text-sm font-medium text-white bg-brand-green border border-transparent rounded-md shadow-sm hover:bg-brand-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-green-dark">
-              Aufgabe erstellen
+              Auftrag erstellen
             </button>
           </div>
         </form>

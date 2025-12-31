@@ -26,6 +26,8 @@ interface DataContextType {
   deleteDocument: (documentId: string) => void;
   downloadDocument: (documentId: string, fileName: string) => void;
   addEmail: (email: Omit<Email, 'id' | 'status' | 'receivedDate'>) => Promise<void>;
+  sendEmail: (emailData: { to: string; subject: string; content: string }) => Promise<void>;
+  fetchEmailsFromGmail: () => Promise<number>;
   updateEmailStatus: (emailId: string, status: EmailStatus) => void;
   deleteEmail: (emailId: string) => void;
   createTaskFromEmail: (email: Email, taskData: Partial<Task>) => void;
@@ -484,6 +486,62 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Send Email
+  const sendEmail = async (emailData: { to: string; subject: string; content: string }) => {
+    try {
+      const response = await fetch(`${API_URL}/emails`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...emailData,
+          type: 'sent',
+          from: 'office@greenbros.de',
+          keywords: [],
+          attachments: []
+        }),
+      });
+
+      if (response.ok) {
+        const newEmail = await response.json();
+        setEmails(prevEmails => [newEmail, ...prevEmails]);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to send email. Status:', response.status, 'Error:', errorText);
+        throw new Error(`Failed to send email: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  };
+
+  // Fetch Emails from Gmail
+  const fetchEmailsFromGmail = async (): Promise<number> => {
+    try {
+      const response = await fetch(`${API_URL}/emails/fetch`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        // Add new emails to state
+        if (result.emails && result.emails.length > 0) {
+          setEmails(prevEmails => [...result.emails, ...prevEmails]);
+        }
+
+        return result.count;
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to fetch emails from Gmail. Status:', response.status, 'Error:', errorText);
+        throw new Error(`Failed to fetch emails from Gmail: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error fetching emails from Gmail:', error);
+      throw error;
+    }
+  };
+
   return (
     <DataContext.Provider value={{
       tasks,
@@ -508,6 +566,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       deleteDocument,
       downloadDocument,
       addEmail,
+      sendEmail,
+      fetchEmailsFromGmail,
       updateEmailStatus,
       deleteEmail,
       createTaskFromEmail,

@@ -46,6 +46,8 @@ const ThemeToggle: React.FC<{ isCollapsed?: boolean }> = ({ isCollapsed = false 
 
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isCollapsed, onToggle }) => {
+  const sidebarRef = React.useRef<HTMLElement>(null);
+
   const navItems: { view: View; label: string; icon: React.ReactNode }[] = [
     { view: 'dashboard', label: 'Dashboard', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
     { view: 'tasks', label: 'Aufträge', icon: <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg> },
@@ -58,12 +60,22 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isCollap
 
   return (
     <nav
+      ref={sidebarRef}
       className={`
         bg-brand-green dark:bg-gray-900 text-white
         flex flex-col p-4
         transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-20' : 'w-64'}
       `}
+      style={{
+        position: 'relative',
+        zIndex: 10,
+        flexShrink: 0,
+        maxWidth: isCollapsed ? '5rem' : '16rem',
+        minWidth: isCollapsed ? '5rem' : '16rem',
+        overflow: 'hidden',
+        contain: 'layout style paint'
+      }}
     >
       {/* Header with Logo and Toggle */}
       <div className="flex items-center justify-between mb-8 px-2">
@@ -99,11 +111,48 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isCollap
       )}
 
       {/* Navigation Items */}
-      <ul className="flex-grow space-y-1">
+      <ul
+        className="flex-grow space-y-1"
+        style={{
+          flexShrink: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
+          position: 'relative'
+        }}
+      >
         {navItems.map(item => (
           <li
             key={item.view}
-            onClick={() => setCurrentView(item.view)}
+            onClick={(e) => {
+              // Check if click actually happened within the Sidebar's boundaries
+              if (sidebarRef.current) {
+                const rect = sidebarRef.current.getBoundingClientRect();
+                const clickX = e.clientX;
+                const clickY = e.clientY;
+
+                const isWithinSidebar = (
+                  clickX >= rect.left &&
+                  clickX <= rect.right &&
+                  clickY >= rect.top &&
+                  clickY <= rect.bottom
+                );
+
+                console.log('🧭 Nav item clicked:', item.view);
+                console.log('Click position:', { x: clickX, y: clickY });
+                console.log('Sidebar bounds:', rect);
+                console.log('Is within sidebar?', isWithinSidebar);
+
+                if (!isWithinSidebar) {
+                  console.log('❌ Click was outside sidebar bounds, ignoring');
+                  e.stopPropagation();
+                  return;
+                }
+              }
+
+              console.log('✅ Valid sidebar click, changing view to:', item.view);
+              e.stopPropagation();
+              setCurrentView(item.view);
+            }}
             className={`
               flex items-center px-3 py-3 rounded-lg cursor-pointer
               transition-colors duration-200
@@ -113,6 +162,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setCurrentView, isCollap
               }
               ${isCollapsed ? 'justify-center' : ''}
             `}
+            style={{
+              flexShrink: 0,
+              width: '100%',
+              maxWidth: '100%'
+            }}
             title={isCollapsed ? item.label : ''}
           >
             <NavIcon icon={item.icon} />

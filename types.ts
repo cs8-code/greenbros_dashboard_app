@@ -49,10 +49,13 @@ export interface Document {
 }
 
 export type EmailStatus = 'unread' | 'read' | 'converted';
+export type EmailType = 'received' | 'sent';
 
 export interface Email {
   id: string;
+  type: EmailType;
   from: string;
+  to?: string;
   subject: string;
   content: string;
   receivedDate: string; // YYYY-MM-DD HH:mm
@@ -60,4 +63,12 @@ export interface Email {
   keywords: string[]; // Keywords that triggered import (e.g., "Preisanfrage")
   attachments?: string[];
   relatedTaskId?: string; // ID of task created from this email
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  category: 'quote' | 'appointment' | 'followup' | 'general';
 }

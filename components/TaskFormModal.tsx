@@ -37,6 +37,8 @@ export default function TaskFormModal({ isOpen, onClose, onSave, onDelete, task 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('✅ TaskFormModal submit - preventDefault called');
     onSave({
       title,
       description,
@@ -45,6 +47,7 @@ export default function TaskFormModal({ isOpen, onClose, onSave, onDelete, task 
       dueDate,
     });
     onClose();
+    return false;
   };
 
   const toggleEmployee = (employeeId: string) => {
