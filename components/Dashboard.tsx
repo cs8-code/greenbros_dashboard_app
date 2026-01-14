@@ -214,7 +214,8 @@ const Dashboard: React.FC = () => {
     const dayKeys: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDayKey = dayKeys[new Date().getDay()];
     const availableTeam = employees.filter(e => e.availability[currentDayKey]);
-    const unreadEmailsCount = emails.filter(e => !e.status).length; 
+    // Count unread received emails (type === 'received' or no type field means received)
+    const unreadEmailsCount = emails.filter(e => e.status === 'unread' && (e.type === 'received' || !e.type)).length; 
 
     return (
         <div className="space-y-8">

@@ -76,6 +76,7 @@ function initDatabase() {
       emails: [
         {
           id: 'em1',
+          type: 'received',
           from: 'kunde@example.com',
           subject: 'Preisanfrage für Gartenpflege',
           content: 'Guten Tag,\n\nich interessiere mich für Ihre Gartenpflegedienste. Könnten Sie mir bitte ein Angebot für die regelmäßige Pflege meines Gartens (ca. 500qm) erstellen?\n\nMit freundlichen Grüßen',
@@ -86,6 +87,7 @@ function initDatabase() {
         },
         {
           id: 'em2',
+          type: 'received',
           from: 'mueller@web.de',
           subject: 'Anfrage: Herbst-Aufräumarbeiten',
           content: 'Hallo,\n\nich benötige Unterstützung bei den Herbst-Aufräumarbeiten. Wann hätten Sie Zeit?\n\nViele Grüße\nHerr Müller',
