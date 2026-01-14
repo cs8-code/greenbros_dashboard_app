@@ -121,7 +121,7 @@ router.post('/:id/analyze', async (req, res) => {
     }
 
     const clients = db.getAll('clients');
-    const analysis = await analyzeEmail(email.content, email.subject, clients);
+    const analysis = await analyzeEmail(email.content, email.subject, clients, email.from);
 
     res.json(analysis);
   } catch (error) {

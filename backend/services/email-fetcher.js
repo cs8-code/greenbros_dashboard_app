@@ -70,10 +70,16 @@ export async function fetchNewEmails() {
                 }
 
                 try {
-                  // Extract from address
-                  const from = parsed.from && parsed.from.value && parsed.from.value[0]
-                    ? parsed.from.value[0].address
-                    : 'unknown@example.com';
+                  // Extract from address with name if available
+                  let from = 'unknown@example.com';
+                  if (parsed.from && parsed.from.value && parsed.from.value[0]) {
+                    const fromData = parsed.from.value[0];
+                    if (fromData.name && fromData.address) {
+                      from = `${fromData.name} <${fromData.address}>`;
+                    } else {
+                      from = fromData.address;
+                    }
+                  }
 
                   // Extract subject
                   const subject = parsed.subject || '(No Subject)';

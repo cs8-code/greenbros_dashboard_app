@@ -41,6 +41,28 @@ const EmailsList: React.FC = () => {
     }
   };
 
+  // Helper to extract contact person name from email signature
+  const extractContactPersonFromSignature = (emailContent: string): string => {
+    if (!emailContent) return '';
+
+    // Common German and English sign-off phrases
+    const signOffPatterns = [
+      /(?:mit\s+freundlichen\s+grüßen|freundliche\s+grüße|viele\s+grüße|grüße|best\s+regards|kind\s+regards|regards)\s*[,:]?\s*\n+([^\n]+)/gi,
+    ];
+
+    for (const pattern of signOffPatterns) {
+      const match = emailContent.match(pattern);
+      if (match && match[1]) {
+        // Clean up the extracted name (remove extra whitespace, company info on next lines)
+        const name = match[1].trim().split('\n')[0].trim();
+        // Remove common titles and company-related text
+        return name.replace(/^(herr|frau|mr\.|mrs\.|ms\.|dr\.)\s+/i, '').trim();
+      }
+    }
+
+    return '';
+  };
+
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'unread':
@@ -110,6 +132,7 @@ const EmailsList: React.FC = () => {
       const summaryParts = [
         `📧 Email-Typ: ${analysis.emailType}`,
         analysis.customerName ? `👤 Kunde: ${analysis.customerName}` : null,
+        analysis.suggestedContactPerson ? `🧑 Ansprechpartner: ${analysis.suggestedContactPerson}` : null,
         analysis.customerPhone ? `📱 Telefon: ${analysis.customerPhone}` : null,
         `🔧 Service: ${analysis.serviceRequested}`,
         `⚠️ Dringlichkeit: ${analysis.urgency}`,
@@ -397,6 +420,7 @@ const EmailsList: React.FC = () => {
             title: (selectedEmail as any).aiAnalysis?.suggestedTaskTitle || selectedEmail.subject,
             description: (selectedEmail as any).aiAnalysis?.suggestedTaskDescription || selectedEmail.content,
             clientId: (selectedEmail as any).aiAnalysis?.matchingClient || '',
+            contactPerson: (selectedEmail as any).aiAnalysis?.suggestedContactPerson || extractContactPersonFromSignature(selectedEmail.content),
             assignedTo: [],
             dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             status: 'open'
