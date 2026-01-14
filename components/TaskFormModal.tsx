@@ -12,10 +12,13 @@ interface TaskFormModalProps {
 }
 
 export default function TaskFormModal({ isOpen, onClose, onSave, onDelete, task }: TaskFormModalProps) {
-  const { clients, employees } = useData();
+  const { clients, employees, addClient } = useData();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [clientId, setClientId] = useState('');
+  const [clientMode, setClientMode] = useState<'existing' | 'new'>('existing');
+  const [newClientName, setNewClientName] = useState('');
+  const [contactPerson, setContactPerson] = useState('');
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
 
@@ -24,25 +27,46 @@ export default function TaskFormModal({ isOpen, onClose, onSave, onDelete, task 
       setTitle(task.title);
       setDescription(task.description);
       setClientId(task.clientId);
+      setContactPerson(task.contactPerson || '');
       setAssignedTo(task.assignedTo);
       setDueDate(task.dueDate);
+      setClientMode('existing');
+      setNewClientName('');
     } else {
       setTitle('');
       setDescription('');
       setClientId('');
+      setContactPerson('');
       setAssignedTo([]);
       setDueDate('');
+      setClientMode('existing');
+      setNewClientName('');
     }
   }, [task, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     e.stopPropagation();
     console.log('✅ TaskFormModal submit - preventDefault called');
+
+    let finalClientId = clientId;
+
+    // If creating a new client, create it first
+    if (clientMode === 'new' && newClientName.trim()) {
+      const newClientId = `c${Date.now()}`;
+      await addClient({
+        name: newClientName.trim(),
+        address: '',
+        contactPerson: contactPerson.trim() || undefined,
+      });
+      finalClientId = newClientId;
+    }
+
     onSave({
       title,
       description,
-      clientId,
+      clientId: finalClientId,
+      contactPerson: contactPerson.trim() || undefined,
       assignedTo,
       dueDate,
     });
@@ -98,17 +122,71 @@ export default function TaskFormModal({ isOpen, onClose, onSave, onDelete, task 
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Kunde *
           </label>
-          <select
-            value={clientId}
-            onChange={(e) => setClientId(e.target.value)}
+
+          {/* Client Mode Toggle */}
+          <div className="flex space-x-4 mb-3">
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                value="existing"
+                checked={clientMode === 'existing'}
+                onChange={(e) => setClientMode(e.target.value as 'existing' | 'new')}
+                className="w-4 h-4 text-brand-green focus:ring-brand-green"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Bestehender Kunde</span>
+            </label>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="radio"
+                value="new"
+                checked={clientMode === 'new'}
+                onChange={(e) => setClientMode(e.target.value as 'existing' | 'new')}
+                className="w-4 h-4 text-brand-green focus:ring-brand-green"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">Neuer Kunde</span>
+            </label>
+          </div>
+
+          {/* Existing Client Dropdown */}
+          {clientMode === 'existing' && (
+            <select
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-green dark:bg-gray-700 dark:text-gray-100"
+              required
+            >
+              <option value="">Kunde auswählen</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>{client.name}</option>
+              ))}
+            </select>
+          )}
+
+          {/* New Client Input */}
+          {clientMode === 'new' && (
+            <input
+              type="text"
+              value={newClientName}
+              onChange={(e) => setNewClientName(e.target.value)}
+              placeholder="Kundenname eingeben"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-green dark:bg-gray-700 dark:text-gray-100"
+              required
+            />
+          )}
+        </div>
+
+        {/* Contact Person Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Ansprechpartner (optional)
+          </label>
+          <input
+            type="text"
+            value={contactPerson}
+            onChange={(e) => setContactPerson(e.target.value)}
+            placeholder="Name des Ansprechpartners"
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-green dark:bg-gray-700 dark:text-gray-100"
-            required
-          >
-            <option value="">Kunde auswählen</option>
-            {clients.map(client => (
-              <option key={client.id} value={client.id}>{client.name}</option>
-            ))}
-          </select>
+          />
         </div>
 
         <div>
@@ -126,7 +204,7 @@ export default function TaskFormModal({ isOpen, onClose, onSave, onDelete, task 
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Zugewiesen an
+            Zuweisen an
           </label>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {employees.map(employee => (

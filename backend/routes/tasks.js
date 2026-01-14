@@ -29,8 +29,8 @@ router.get('/:id', (req, res) => {
 // Create new task
 router.post('/', (req, res) => {
   try {
-    const { id, title, clientId, assignedTo, dueDate, status, description } = req.body;
-    const newTask = db.create('tasks', { id, title, clientId, assignedTo, dueDate, status, description });
+    const { id, title, clientId, contactPerson, assignedTo, dueDate, status, description } = req.body;
+    const newTask = db.create('tasks', { id, title, clientId, contactPerson, assignedTo, dueDate, status, description });
     res.status(201).json(newTask);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -40,8 +40,8 @@ router.post('/', (req, res) => {
 // Update task
 router.put('/:id', (req, res) => {
   try {
-    const { title, clientId, assignedTo, dueDate, status, description } = req.body;
-    const updated = db.update('tasks', req.params.id, { title, clientId, assignedTo, dueDate, status, description });
+    const { title, clientId, contactPerson, assignedTo, dueDate, status, description } = req.body;
+    const updated = db.update('tasks', req.params.id, { title, clientId, contactPerson, assignedTo, dueDate, status, description });
 
     if (!updated) {
       return res.status(404).json({ error: 'Task not found' });

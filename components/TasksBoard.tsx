@@ -29,7 +29,10 @@ const TaskCard: React.FC<{ task: Task; onEdit: (task: Task) => void; onDelete: (
             title="Doppelklick zum Bearbeiten"
         >
             <h4 className="font-bold text-gray-800 dark:text-gray-100">{task.title}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{client?.name}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {client?.name}
+              {task.contactPerson && <span className="text-xs"> • {task.contactPerson}</span>}
+            </p>
             <p className="text-xs text-gray-500 dark:text-gray-300 mt-2">{task.description}</p>
             <div className="flex items-center justify-between mt-4">
                 <div className="flex -space-x-2">

@@ -4,6 +4,7 @@ export interface Task {
   id: string;
   title: string;
   clientId: string;
+  contactPerson?: string;
   assignedTo: string[];
   dueDate: string; // YYYY-MM-DD
   status: TaskStatus;
