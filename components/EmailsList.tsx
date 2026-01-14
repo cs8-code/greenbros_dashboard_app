@@ -30,6 +30,7 @@ const EmailsList: React.FC = () => {
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showComposeModal, setShowComposeModal] = useState(false);
+  const [replyToEmail, setReplyToEmail] = useState<Email | null>(null);
   const [analyzingEmailId, setAnalyzingEmailId] = useState<string | null>(null);
   const [fetchingEmails, setFetchingEmails] = useState(false);
 
@@ -64,6 +65,20 @@ const EmailsList: React.FC = () => {
     return '';
   };
 
+  // Helper to extract email address from "Name <email@example.com>" format
+  const extractEmailAddress = (fromField: string): string => {
+    if (!fromField) return '';
+
+    // Try to extract email from "Name <email@example.com>" format
+    const match = fromField.match(/<([^>]+)>/);
+    if (match && match[1]) {
+      return match[1];
+    }
+
+    // If no angle brackets, assume it's just an email address
+    return fromField;
+  };
+
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'unread':
@@ -94,6 +109,12 @@ const EmailsList: React.FC = () => {
     preventEventPropagation(e);
     setSelectedEmail(email);
     setShowTaskModal(true);
+  };
+
+  const handleReplyToEmail = (e: React.MouseEvent, email: Email) => {
+    preventEventPropagation(e);
+    setReplyToEmail(email);
+    setShowComposeModal(true);
   };
 
   const handleSaveTask = async (taskData: any) => {
@@ -411,10 +432,10 @@ const EmailsList: React.FC = () => {
                               )}
                             </button>
                             <SafeButton
-                              onClick={(e) => handleCreateTask(e, email)}
+                              onClick={(e) => handleReplyToEmail(e, email)}
                               className="px-3 py-1.5 text-sm bg-brand-green text-white rounded hover:bg-brand-green-dark transition-colors"
                             >
-                              Auftrag erstellen
+                              Antworten
                             </SafeButton>
                           </>
                         )}
@@ -469,7 +490,12 @@ const EmailsList: React.FC = () => {
       {/* Compose Email Modal */}
       <ComposeEmailModal
         isOpen={showComposeModal}
-        onClose={() => setShowComposeModal(false)}
+        onClose={() => {
+          setShowComposeModal(false);
+          setReplyToEmail(null);
+        }}
+        replyTo={replyToEmail ? extractEmailAddress(replyToEmail.from) : undefined}
+        replySubject={replyToEmail?.subject}
       />
     </div>
   );

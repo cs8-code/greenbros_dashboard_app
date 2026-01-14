@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { EMAIL_TEMPLATES } from '../constants/emailTemplates';
 import { useData } from '../context/DataContext';
@@ -6,9 +6,11 @@ import { useData } from '../context/DataContext';
 interface ComposeEmailModalProps {
   isOpen: boolean;
   onClose: () => void;
+  replyTo?: string;
+  replySubject?: string;
 }
 
-export default function ComposeEmailModal({ isOpen, onClose }: ComposeEmailModalProps) {
+export default function ComposeEmailModal({ isOpen, onClose, replyTo, replySubject }: ComposeEmailModalProps) {
   const { sendEmail } = useData();
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [to, setTo] = useState('');
@@ -16,6 +18,22 @@ export default function ComposeEmailModal({ isOpen, onClose }: ComposeEmailModal
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
+
+  // Update form when replyTo/replySubject changes
+  useEffect(() => {
+    if (isOpen) {
+      if (replyTo) {
+        setTo(replyTo);
+        setSubject(replySubject ? `Re: ${replySubject}` : '');
+      } else {
+        setTo('');
+        setSubject('');
+      }
+      setContent('');
+      setSelectedTemplateId('');
+      setError('');
+    }
+  }, [isOpen, replyTo, replySubject]);
 
   const handleTemplateChange = (templateId: string) => {
     setSelectedTemplateId(templateId);
