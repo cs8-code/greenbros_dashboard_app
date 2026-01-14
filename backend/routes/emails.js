@@ -141,12 +141,16 @@ router.post('/fetch', async (req, res) => {
     const savedEmails = [];
 
     for (const emailData of newEmails) {
-      // Check if email already exists (simple duplicate detection)
-      const isDuplicate = existingEmails.some(e =>
-        e.from === emailData.from &&
-        e.subject === emailData.subject &&
-        Math.abs(new Date(e.receivedDate) - new Date()) < 60000 // Within 1 minute
-      );
+      // Improved duplicate detection - check by from, subject, and content
+      const isDuplicate = existingEmails.some(e => {
+        // Match by from, subject, and first 200 chars of content
+        const contentMatch = e.content && emailData.content &&
+                            e.content.substring(0, 200) === emailData.content.substring(0, 200);
+
+        return e.from === emailData.from &&
+               e.subject === emailData.subject &&
+               contentMatch;
+      });
 
       if (!isDuplicate) {
         const newEmail = {
@@ -163,6 +167,8 @@ router.post('/fetch', async (req, res) => {
 
         db.create('emails', newEmail);
         savedEmails.push(newEmail);
+      } else {
+        console.log(`Skipping duplicate email: ${emailData.subject} from ${emailData.from}`);
       }
     }
 

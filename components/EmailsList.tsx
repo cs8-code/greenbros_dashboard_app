@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext';
 import { Email, EmailType } from '../types';
 import Modal from './Modal';
@@ -33,6 +33,33 @@ const EmailsList: React.FC = () => {
   const [replyToEmail, setReplyToEmail] = useState<Email | null>(null);
   const [analyzingEmailId, setAnalyzingEmailId] = useState<string | null>(null);
   const [fetchingEmails, setFetchingEmails] = useState(false);
+
+  // Auto-fetch emails every 60 seconds
+  useEffect(() => {
+    const AUTO_FETCH_INTERVAL = 60 * 1000; // 60 seconds  in milliseconds
+
+    const fetchEmailsQuietly = async () => {
+      try {
+        console.log('🔄 Auto-fetching emails...');
+        const count = await fetchEmailsFromGmail();
+        if (count > 0) {
+          console.log(`✅ Auto-fetched ${count} new email(s)`);
+        }
+      } catch (error) {
+        console.error('❌ Auto-fetch failed:', error);
+        // Silently fail - don't show error to user for auto-fetch
+      }
+    };
+
+    // Set up interval for auto-fetching
+    const intervalId = setInterval(fetchEmailsQuietly, AUTO_FETCH_INTERVAL);
+
+    // Cleanup interval on component unmount
+    return () => {
+      clearInterval(intervalId);
+      console.log('🛑 Stopped auto-fetching emails');
+    };
+  }, [fetchEmailsFromGmail]);
 
   // Helper to prevent all event propagation
   const preventEventPropagation = (e: React.MouseEvent) => {
