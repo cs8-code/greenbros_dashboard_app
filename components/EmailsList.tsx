@@ -27,6 +27,7 @@ const EmailsList: React.FC = () => {
   const { emails, updateEmailStatus, deleteEmail, createTaskFromEmail, revertEmailConversion, addEmail, sendEmail, fetchEmailsFromGmail, analyzeEmailWithAI, clients, employees } = useData();
   const [activeTab, setActiveTab] = useState<EmailType>('received');
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+  const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showComposeModal, setShowComposeModal] = useState(false);
   const [analyzingEmailId, setAnalyzingEmailId] = useState<string | null>(null);
@@ -76,9 +77,17 @@ const EmailsList: React.FC = () => {
     }
   };
 
-  const handleMarkAsRead = (e: React.MouseEvent, emailId: string) => {
-    preventEventPropagation(e);
-    updateEmailStatus(emailId, 'read');
+  const handleEmailClick = (email: Email) => {
+    // Toggle expanded state
+    if (expandedEmailId === email.id) {
+      setExpandedEmailId(null);
+    } else {
+      setExpandedEmailId(email.id);
+      // Automatically mark as read when expanded
+      if (email.status === 'unread') {
+        updateEmailStatus(email.id, 'read');
+      }
+    }
   };
 
   const handleCreateTask = (e: React.MouseEvent, email: Email) => {
@@ -287,124 +296,153 @@ const EmailsList: React.FC = () => {
             </p>
           </div>
         ) : (
-          filteredEmails.map((email) => (
-            <div
-              key={email.id}
-              className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border-l-4 ${
-                email.status === 'unread' ? 'border-blue-500' :
-                email.status === 'converted' ? 'border-green-500' :
-                'border-gray-300'
-              }`}
-            >
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      {email.subject}
-                    </h3>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(email.status)}`}>
-                      {email.status === 'unread' ? 'Neu' :
-                       email.status === 'read' ? 'Gelesen' :
-                       'In Aufgabe umgewandelt'}
-                    </span>
-                  </div>
+          filteredEmails.map((email) => {
+            const isExpanded = expandedEmailId === email.id;
 
-                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <span className="flex items-center gap-1">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      {email.type === 'received' ? `Von: ${email.from}` : `An: ${email.to}`}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {email.receivedDate}
-                    </span>
-                  </div>
-
-                  {email.keywords.length > 0 && (
-                    <div className="flex gap-2 mb-3">
-                      {email.keywords.map((keyword, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 rounded-full"
-                        >
-                          {keyword}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                    {email.content}
-                  </p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="mt-4 flex gap-2 flex-wrap">
-                {email.status === 'unread' && email.type === 'received' && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleMarkAsRead(e, email.id)}
-                    className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Als gelesen markieren
-                  </button>
-                )}
-                {email.status !== 'converted' && email.type === 'received' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => handleAnalyzeWithAI(e, email)}
-                      disabled={analyzingEmailId === email.id}
-                      className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {analyzingEmailId === email.id ? (
-                        <>
-                          <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Analysiert...
-                        </>
-                      ) : (
-                        <>
-                          🤖 Automatisieren
-                        </>
-                      )}
-                    </button>
-                    <SafeButton
-                      onClick={(e) => handleCreateTask(e, email)}
-                      className="px-3 py-1.5 text-sm bg-brand-green text-white rounded hover:bg-brand-green-dark transition-colors"
-                    >
-                      Auftrag erstellen
-                    </SafeButton>
-                  </>
-                )}
-                {email.status === 'converted' && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleRevertConversion(e, email.id)}
-                    className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
-                  >
-                    Widerrufen
-                  </button>
-                )}
-                <SafeButton
-                  onClick={(e) => {
-                    preventEventPropagation(e);
-                    deleteEmail(email.id);
-                  }}
-                  className="px-3 py-1.5 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+            return (
+              <div
+                key={email.id}
+                className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border-l-4 transition-all ${
+                  email.status === 'unread' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10' :
+                  email.status === 'converted' ? 'border-green-500' :
+                  'border-gray-300'
+                }`}
+              >
+                {/* Collapsed View - Email Header (Always Visible) */}
+                <div
+                  onClick={() => handleEmailClick(email)}
+                  className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                    email.status === 'unread' ? 'font-semibold' : ''
+                  }`}
                 >
-                  Löschen
-                </SafeButton>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        {/* Envelope icon for unread */}
+                        {email.status === 'unread' && (
+                          <svg className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                          </svg>
+                        )}
+
+                        <h3 className="text-base text-gray-900 dark:text-gray-100 truncate flex-1">
+                          {email.subject}
+                        </h3>
+
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full flex-shrink-0 ${getStatusBadgeClass(email.status)}`}>
+                          {email.status === 'unread' ? 'Neu' :
+                           email.status === 'read' ? 'Gelesen' :
+                           'In Aufgabe umgewandelt'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="truncate">
+                          {email.type === 'received' ? `Von: ${email.from}` : `An: ${email.to}`}
+                        </span>
+                        <span className="text-xs flex-shrink-0">
+                          {email.receivedDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Expand/Collapse Icon */}
+                    <svg
+                      className={`h-5 w-5 text-gray-400 flex-shrink-0 transition-transform ${
+                        isExpanded ? 'rotate-180' : ''
+                      }`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Expanded View - Full Email Content */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-4 space-y-4">
+                      {/* Keywords */}
+                      {email.keywords.length > 0 && (
+                        <div className="flex gap-2 flex-wrap">
+                          {email.keywords.map((keyword, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 rounded-full"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Email Content */}
+                      <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                          {email.content}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-2 flex-wrap">
+                        {email.status !== 'converted' && email.type === 'received' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => handleAnalyzeWithAI(e, email)}
+                              disabled={analyzingEmailId === email.id}
+                              className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                              {analyzingEmailId === email.id ? (
+                                <>
+                                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Analysiert...
+                                </>
+                              ) : (
+                                <>
+                                  Automatisieren
+                                </>
+                              )}
+                            </button>
+                            <SafeButton
+                              onClick={(e) => handleCreateTask(e, email)}
+                              className="px-3 py-1.5 text-sm bg-brand-green text-white rounded hover:bg-brand-green-dark transition-colors"
+                            >
+                              Auftrag erstellen
+                            </SafeButton>
+                          </>
+                        )}
+                        {email.status === 'converted' && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleRevertConversion(e, email.id)}
+                            className="px-3 py-1.5 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+                          >
+                            Widerrufen
+                          </button>
+                        )}
+                        <SafeButton
+                          onClick={(e) => {
+                            preventEventPropagation(e);
+                            deleteEmail(email.id);
+                          }}
+                          className="px-3 py-1.5 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                        >
+                          Löschen
+                        </SafeButton>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
