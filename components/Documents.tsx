@@ -55,20 +55,17 @@ const Documents: React.FC = () => {
   return (
     <>
       <div className="space-y-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Dokumente</h2>
-            <button
+         <button
               onClick={() => setIsUploadModalOpen(true)}
-              className="bg-brand-green hover:bg-brand-green-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center"
+              className="ml-auto bg-brand-green hover:bg-brand-green-dark text-white font-bold py-2 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               Dokument hochladen
             </button>
-          </div>
-
+          
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">

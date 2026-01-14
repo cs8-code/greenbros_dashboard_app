@@ -111,18 +111,13 @@ const TeamList: React.FC = () => {
 
     return (
         <div className="space-y-4">
-             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Unser Team</h2>
-                    <button
-                        onClick={handleAddEmployee}
-                        className="px-4 py-2 bg-brand-green text-white rounded-lg hover:bg-brand-green-dark flex items-center space-x-2"
-                    >
-                        <span>+</span>
-                        <span>Neuer Mitarbeiter</span>
-                    </button>
-                </div>
-            </div>
+                   <button
+                    onClick={handleAddEmployee}
+                    className="ml-auto px-4 py-2 bg-brand-green text-white rounded-lg hover:bg-brand-green-dark flex items-center space-x-2"
+        >
+        <span>+</span>
+        <span>Neuer Mitarbeiter</span>
+    </button>
             {employees.map(member => {
                 const workStats = workStatsByEmployee[member.id] || [];
                 const isOpen = expandedEmployeeId === member.id;

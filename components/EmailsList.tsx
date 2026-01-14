@@ -225,9 +225,6 @@ const EmailsList: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Email-Anfragen
-          </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             {unreadCount} ungelesene Anfrage{unreadCount !== 1 ? 'n' : ''}
           </p>
